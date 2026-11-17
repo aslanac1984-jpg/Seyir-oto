@@ -1,502 +1,870 @@
+
+
 <!DOCTYPE html>
 <html lang="tr" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#000000" />
-  <title>SEYİR Auto — Neon Kehribar HUD Kokpit</title>
+  <meta name="theme-color" content="#0A0908" />
+  <title>SEYİR Auto — Araç Multimedya Kokpiti</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest/dist/mpegts.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000000; color: #f8fafc; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0A0908; color: #f8fafc; overflow: hidden; }
     .font-display { font-family: 'Outfit', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
-    .amber-glow { box-shadow: 0 0 28px rgba(245, 158, 11, 0.25); }
+    .car-bg { background: radial-gradient(circle at 50% 35%, #2b1d12 0%, #120d0a 55%, #080706 100%); }
+    .gold-border { border-color: rgba(234, 179, 8, 0.55); }
+    .gold-glow { box-shadow: 0 0 30px rgba(234, 179, 8, 0.18); }
     .night-filter { filter: sepia(0.35) hue-rotate(-15deg) brightness(0.85); }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-thumb { background: #d97706; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: #eab308; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-black text-slate-100 antialiased overflow-hidden select-none">
+<body class="car-bg text-slate-100 select-none w-screen h-screen flex flex-col">
 
-  <!-- Açılış Ekranı -->
-  <div id="splash-screen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center transition-opacity duration-700">
-    <div class="relative w-36 h-36 sm:w-48 sm:h-48 rounded-full p-2 bg-gradient-to-tr from-amber-600 via-amber-400 to-yellow-300 shadow-[0_0_70px_rgba(245,158,11,0.65)] animate-pulse flex items-center justify-center mb-5">
-      <div class="w-full h-full rounded-full bg-zinc-950 border-4 border-black flex flex-col items-center justify-center">
-        <span class="text-amber-400 font-black text-3xl font-display tracking-wider">SEYİR</span>
-        <span class="text-[10px] text-amber-500/80 font-mono tracking-widest mt-1">AUTO HUD</span>
-      </div>
-    </div>
-    <h1 class="text-2xl sm:text-4xl font-black tracking-widest text-white mb-1 font-display">
-      SEYİR <span class="text-amber-400">AUTO</span>
-    </h1>
-    <p class="text-[11px] text-amber-300/80 font-mono tracking-wider">NEON KEHRİBAR HUD KOKPİT</p>
-  </div>
-
-  <!-- Ana Kokpit -->
-  <div class="w-screen h-screen overflow-hidden flex flex-col bg-black text-slate-100">
+  <!-- ==================== 1. ANA EKRAN ==================== -->
+  <div id="screen-home" class="screen-view flex-1 flex flex-col justify-between p-3 sm:p-5 overflow-hidden">
     
-    <!-- Üst Durum Çubuğu + Sabit Mini Radyo -->
-    <header class="h-14 sm:h-16 shrink-0 px-3 sm:px-4 flex items-center justify-between border-b border-amber-500/25 bg-[#0D0B08] z-20 gap-2">
+    <!-- Üst Durum Çubuğu -->
+    <header class="flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-2 min-w-0">
-        <div class="w-9 h-9 shrink-0 rounded-xl border border-amber-400/60 bg-gradient-to-br from-amber-500 to-amber-600 text-black font-black font-display text-lg flex items-center justify-center">
-          S
+        <!-- Aktif Oynatıcı Kapsülü -->
+        <div onclick="resumeLastMedia()" class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-zinc-900/90 border border-amber-500/40 cursor-pointer active:scale-95 transition">
+          <span class="text-amber-400 text-sm">📺</span>
+          <span id="top-active-title" class="text-xs sm:text-sm font-bold text-white truncate max-w-[130px] sm:max-w-[200px]">TRT 1 HD</span>
+          <span class="w-7 h-7 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-black">▶</span>
         </div>
-        <div class="truncate">
-          <div class="text-sm font-display font-black text-white leading-tight truncate">
-            SEYİR <span class="text-amber-400 text-xs">AUTO</span>
-          </div>
-          <div class="text-[9px] text-amber-500/80 font-mono truncate">19°C · HUD KOKPİT</div>
-        </div>
-      </div>
 
-      <!-- Üst Sabit Mini Radyo Kontrolü -->
-      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-zinc-950 border border-amber-500/35">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        <span id="mini-radio-name" class="text-xs font-bold text-amber-300 truncate max-w-[160px]">TRT FM · WEB 1</span>
-        <button onclick="prevRadio()" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-amber-400 text-xs">⏮</button>
-        <button onclick="toggleRadioPlay()" id="mini-play-btn" class="px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold text-xs">▶</button>
-        <button onclick="nextRadio()" class="px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-amber-400 text-xs">⏭</button>
-      </div>
-
-      <div class="flex items-center gap-1.5 shrink-0">
-        <div id="live-clock" class="px-2.5 py-1 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">
-          00:00
-        </div>
-        <button onclick="toggleNightFilter()" class="h-9 px-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-amber-300">
-          🌙
+        <!-- Favoriler Butonu -->
+        <button onclick="openFavoritesModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-zinc-900/90 border border-amber-500/30 text-xs sm:text-sm font-semibold text-amber-200 hover:border-amber-400">
+          <span class="text-amber-400">♥</span><span>Favoriler</span>
         </button>
+      </div>
+
+      <!-- Sağ Saat ve Tarih -->
+      <div class="text-right shrink-0">
+        <div id="home-clock" class="text-lg sm:text-2xl font-display font-bold text-white leading-none">09:20</div>
+        <div id="home-date" class="text-[10px] sm:text-xs text-zinc-400 mt-0.5">17 Kasım Salı</div>
       </div>
     </header>
 
-    <!-- Alt Gövde -->
-    <div class="flex-1 flex overflow-hidden">
-      
-      <!-- Sol Navigasyon -->
-      <nav class="w-16 sm:w-20 shrink-0 bg-[#0D0B08] border-r border-amber-500/20 flex flex-col items-center py-2 gap-1.5 z-20 overflow-y-auto">
-        <button data-module="driver" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 bg-amber-500 text-black font-extrabold">
-          <span class="text-base">⊞</span><span class="text-[10px]">Sürücü</span>
-        </button>
-        <button data-module="iptv" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">📺</span><span class="text-[10px]">IPTV</span>
-        </button>
-        <button data-module="radio" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">📻</span><span class="text-[10px]">Radyo</span>
-        </button>
-        <button data-module="favorites" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">★</span><span class="text-[10px]">Favori</span>
-        </button>
-        <button data-module="youtube" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">▶</span><span class="text-[10px]">YouTube</span>
-        </button>
-        <button data-module="browser" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">🌐</span><span class="text-[10px]">Tarayıcı</span>
-        </button>
-        <button data-module="settings" class="nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400">
-          <span class="text-base">⚙</span><span class="text-[10px]">M3U/Ayar</span>
-        </button>
-      </nav>
+    <!-- Orta Büyük Kaydırılabilir Kart Alanı (TV / Radyo / YouTube) -->
+    <section class="flex-1 flex flex-col justify-center my-2 sm:my-3 min-h-0">
+      <!-- Kart Geçiş Noktaları & Sekme Seçici -->
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <button onclick="setHeroCard(0)" id="dot-0" class="px-3 py-1 rounded-full bg-amber-400 text-black font-bold text-xs transition">📺 TV</button>
+        <button onclick="setHeroCard(1)" id="dot-1" class="px-3 py-1 rounded-full bg-zinc-900/80 text-zinc-300 border border-zinc-700 font-bold text-xs transition">📻 Radyo</button>
+        <button onclick="setHeroCard(2)" id="dot-2" class="px-3 py-1 rounded-full bg-zinc-900/80 text-zinc-300 border border-zinc-700 font-bold text-xs transition">▶️ YouTube</button>
+      </div>
 
-      <!-- Ekranlar -->
-      <main class="flex-1 flex flex-col overflow-y-auto bg-black p-3 sm:p-5">
+      <!-- Büyük Hero Kart (Parmağınla Sağa/Sola Kaydırılabilir) -->
+      <div id="hero-swipe-area" class="relative w-full max-w-3xl mx-auto flex-1 max-h-[340px] rounded-[28px] bg-gradient-to-br from-[#2a1f16]/95 via-[#1b1510]/95 to-[#120e0b]/95 border-2 border-amber-400/75 gold-glow p-4 sm:p-6 flex flex-col justify-between overflow-hidden transition-all">
         
-        <!-- 1. Sürücü Kokpit -->
-        <div id="view-driver" class="module-view flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full space-y-3.5">
-          <div class="p-4 sm:p-6 rounded-3xl bg-gradient-to-r from-[#1C160C] to-[#120F0A] border border-amber-500/40 amber-glow flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <span class="text-[10px] font-mono text-amber-400 uppercase tracking-widest">NEON KEHRİBAR HUD KOKPİT</span>
-              <h2 class="text-xl sm:text-3xl font-black text-white font-display mt-0.5">SEYİR AUTO MEDYA</h2>
-              <p class="text-xs text-zinc-400 mt-1">Dijital HiFi Tuner · Kategorili IPTV · Özel M3U Desteği</p>
+        <!-- Üst Satır -->
+        <div class="flex items-start justify-between gap-2 z-10">
+          <div>
+            <div id="hero-badge" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-300 uppercase tracking-wider">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> CANLI YAYIN
             </div>
-            <span class="px-3 py-1 rounded-xl bg-black/70 border border-amber-500/30 text-emerald-400 font-mono text-xs font-bold">● SİSTEM HAZIR</span>
+            <h1 id="hero-title" class="text-3xl sm:text-5xl font-display font-black text-white mt-1 tracking-tight">TV</h1>
+            <p id="hero-subtitle" class="text-xs sm:text-sm text-amber-200/80 mt-0.5">Son izlenen kanallar ve canlı akış</p>
+          </div>
+          <button onclick="openCurrentHeroModule()" class="px-6 py-2.5 sm:px-8 sm:py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-display font-black text-sm sm:text-base shadow-lg shadow-amber-500/30 active:scale-95 transition">
+            Aç
+          </button>
+        </div>
+
+        <!-- Alt Geçmiş Kutuları (Son Açılan Kanallar / Radyolar / Videolar) -->
+        <div class="z-10 mt-3">
+          <div id="hero-history-label" class="text-[10px] font-mono text-zinc-400 mb-2 uppercase tracking-wider">SON İZLENEN KANALLAR</div>
+          <div id="hero-history-grid" class="grid grid-cols-4 gap-2 sm:gap-3">
+            <!-- JS ile dinamik dolacak -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Alt Sabit Uygulama Şeridi (Kaydırmadan Etkilenmez) -->
+    <footer class="shrink-0 max-w-3xl mx-auto w-full">
+      <div id="bottom-dock" class="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
+        <button onclick="openScreen('screen-tv-groups')" class="p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/30 flex flex-col items-center justify-center gap-1 active:scale-95 transition">
+          <span class="text-lg sm:text-xl">📺</span>
+          <span class="text-[11px] font-semibold text-zinc-200">Canlı TV</span>
+        </button>
+        <button onclick="openScreen('screen-radio')" class="p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/30 flex flex-col items-center justify-center gap-1 active:scale-95 transition">
+          <span class="text-lg sm:text-xl">📻</span>
+          <span class="text-[11px] font-semibold text-zinc-200">Radyo</span>
+        </button>
+        <button onclick="openScreen('screen-media')" class="p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/30 flex flex-col items-center justify-center gap-1 active:scale-95 transition">
+          <span class="text-lg sm:text-xl">🎵</span>
+          <span class="text-[11px] font-semibold text-zinc-200">Medya</span>
+        </button>
+        <button onclick="openScreen('screen-browser')" class="p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/30 flex flex-col items-center justify-center gap-1 active:scale-95 transition">
+          <span class="text-lg sm:text-xl">🌐</span>
+          <span class="text-[11px] font-semibold text-zinc-200">Tarayıcı</span>
+        </button>
+        <button onclick="openScreen('screen-settings')" class="col-span-4 sm:col-span-1 p-2.5 sm:p-3 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/40 flex flex-row sm:flex-col items-center justify-center gap-1.5 sm:gap-1 active:scale-95 transition">
+          <span class="text-lg sm:text-xl">⚙️</span>
+          <span class="text-[11px] font-semibold text-amber-300">Ayarlar</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== 2. TV GRUPLARI & LİNK EKLEME EKRANI ==================== -->
+  <div id="screen-tv-groups" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-3 sm:p-5 max-w-3xl mx-auto w-full space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-display font-bold text-amber-400">TV Kanallarım & M3U Listeleri</h2>
+        <span class="text-[11px] text-zinc-400">Silmek için listeye dokunun</span>
+      </div>
+      <div id="tv-groups-container" class="space-y-2.5 pb-4">
+        <!-- JS ile gruplar doldurulacak -->
+      </div>
+    </div>
+
+    <!-- Alt Kontrol Çubuğu (Görseldeki Gibi) -->
+    <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-sm font-bold text-white flex items-center gap-2">
+        <span>←</span><span>TV</span>
+      </button>
+
+      <div class="flex items-center gap-2">
+        <button onclick="filterTvPrompt()" title="Filtrele" class="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 flex items-center justify-center text-sm">🌪️</button>
+        <!-- Artılı TV Logosu -> Link Ekleme Penceresi -->
+        <button onclick="openAddLinkModal()" title="Kanal / M3U Linki Ekle" class="px-3.5 h-10 rounded-full bg-amber-400 text-black font-black flex items-center gap-1 text-xs shadow-lg shadow-amber-500/20">
+          <span>📺+</span><span>Link Ekle</span>
+        </button>
+        <button onclick="voiceSearchChannel()" title="Sesli Ara" class="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 text-zinc-300 flex items-center justify-center text-sm">🎙️</button>
+        <button onclick="openScreen('screen-home')" title="Ana Ekran" class="w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center text-base">🏠</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. TAM EKRAN TV OYNATICI (DOKUNUNCA AÇILAN KANAL LİSTESİ) ==================== -->
+  <div id="screen-tv-player" class="screen-view hidden fixed inset-0 z-50 bg-black flex flex-col">
+    <!-- Video Alanı (Dokununca Arayüzü Aç/Kapat) -->
+    <div onclick="togglePlayerOverlay()" class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
+      <video id="video-element" playsinline class="w-full h-full object-contain"></video>
+
+      <!-- Üst Bilgi (Overlay Açıkken) -->
+      <div id="player-top-bar" class="absolute top-0 inset-x-0 p-3 bg-gradient-to-b from-black/90 to-transparent flex items-center justify-between transition-opacity duration-300">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold">● CANLI</span>
+          <span id="player-channel-name" class="text-sm sm:text-base font-bold text-white">TRT 1</span>
+        </div>
+        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+          <button onclick="switchStreamEngine()" class="px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-amber-400/50 text-amber-300 text-xs font-bold">⚡ Motor Değiştir</button>
+          <button onclick="openScreen('screen-tv-groups')" class="px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-white text-xs font-bold">✕ Kapat</button>
+        </div>
+      </div>
+
+      <!-- Sol Yarı Şeffaf Kanal Listesi Çekmecesi (Görseldeki Gibi) -->
+      <div id="player-side-drawer" onclick="event.stopPropagation()" class="absolute left-0 top-14 bottom-24 w-72 sm:w-80 bg-black/85 backdrop-blur-md border-r border-amber-500/30 p-2.5 overflow-y-auto space-y-2 transition-transform duration-300">
+        <!-- JS ile numaralı kanal kartları dolacak -->
+      </div>
+
+      <!-- Alt Oynatıcı Kontrolleri (Görseldeki Gibi) -->
+      <div id="player-bottom-bar" onclick="event.stopPropagation()" class="absolute bottom-0 inset-x-0 bg-black/90 backdrop-blur-md border-t border-zinc-800 transition-opacity duration-300">
+        <div class="px-4 py-2.5 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-red-500 font-bold text-xs">
+            <span>●</span><span>CANLI</span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onclick="switchModule('iptv')" class="p-5 rounded-3xl bg-[#16120C] hover:bg-[#1F1910] border border-amber-500/35 text-left flex items-center justify-between">
-              <div>
-                <div class="text-amber-400 font-display font-extrabold text-lg">IPTV CANLI TV</div>
-                <div id="driver-tv-count" class="text-xs text-zinc-400 mt-0.5">Kayıtlı Kanallar: 12 Adet</div>
-              </div>
-              <span class="px-2.5 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold">● CANLI</span>
-            </button>
+          <!-- Orta Büyük Altın Oynat/Duraklat ve Önceki/Sonraki -->
+          <div class="flex items-center gap-5">
+            <button onclick="prevTvChannel()" class="text-white text-xl hover:text-amber-400">⏮</button>
+            <button onclick="toggleVideoPlay()" id="video-play-btn" class="w-12 h-12 rounded-full bg-amber-400 text-black flex items-center justify-center text-xl font-black shadow-lg shadow-amber-500/30">⏸</button>
+            <button onclick="nextTvChannel()" class="text-white text-xl hover:text-amber-400">⏭</button>
+          </div>
 
-            <button onclick="switchModule('radio')" class="p-5 rounded-3xl bg-[#16120C] hover:bg-[#1F1910] border border-amber-500/35 text-left flex items-center justify-between">
-              <div>
-                <div class="text-amber-400 font-display font-extrabold text-lg">RADYO FM (HIFI RDS)</div>
-                <div id="driver-radio-now" class="text-xs text-zinc-400 mt-0.5">Seçili: TRT FM (128 kbps)</div>
-              </div>
-              <span class="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold">TUNER</span>
-            </button>
-
-            <button onclick="switchModule('favorites')" class="p-5 rounded-3xl bg-[#16120C] hover:bg-[#1F1910] border border-amber-500/35 text-left flex items-center justify-between">
-              <div>
-                <div class="text-amber-400 font-display font-extrabold text-lg">FAVORİLERİM</div>
-                <div class="text-xs text-zinc-400 mt-0.5">Yıldızlı Kanal & Radyo Kısayolları</div>
-              </div>
-              <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold">★ LİSTE</span>
-            </button>
-
-            <button onclick="switchModule('settings')" class="p-5 rounded-3xl bg-[#16120C] hover:bg-[#1F1910] border border-amber-500/35 text-left flex items-center justify-between">
-              <div>
-                <div class="text-amber-400 font-display font-extrabold text-lg">M3U YÜKLE & AYARLAR</div>
-                <div class="text-xs text-zinc-400 mt-0.5">M3U Dosya / Link Ekle & Silme Onayı</div>
-              </div>
-              <span class="px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-bold">+ M3U</span>
-            </button>
+          <!-- Sağ İkonlar: Tam Ekran & Kalp (Favori) -->
+          <div class="flex items-center gap-3">
+            <button onclick="toggleVideoFit()" title="Ekran Oranı" class="text-zinc-300 hover:text-amber-400 text-lg">⛶</button>
+            <button onclick="toggleCurrentChannelFav()" id="player-fav-btn" title="Favorilere Ekle" class="text-zinc-300 hover:text-amber-400 text-xl">♡</button>
           </div>
         </div>
 
-        <!-- 2. IPTV -->
-        <div id="view-iptv" class="module-view hidden flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-3">
-          <div class="aspect-video w-full bg-zinc-950 rounded-2xl overflow-hidden border border-amber-500/40 relative shrink-0">
-            <video id="tv-player" controls playsinline class="w-full h-full object-contain bg-black"></video>
-            <div id="channel-badge" class="absolute top-2.5 left-2.5 px-3 py-1 rounded-lg bg-black/80 border border-amber-500/40 text-amber-400 text-xs font-bold">
-              Kanal Seçin
-            </div>
-          </div>
-
-          <div class="flex gap-1.5 overflow-x-auto pb-1 shrink-0">
-            <button onclick="renderTvList('Tümü')" class="cat-btn px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold text-xs shrink-0">Tümü</button>
-            <button onclick="renderTvList('Ulusal')" class="cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0">Ulusal</button>
-            <button onclick="renderTvList('Haber')" class="cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0">Haber</button>
-            <button onclick="renderTvList('Spor')" class="cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0">Spor</button>
-            <button onclick="renderTvList('Çocuk')" class="cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0">Çocuk</button>
-            <button onclick="renderTvList('Özel M3U')" class="cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0">Özel M3U</button>
-          </div>
-
-          <div id="tv-channel-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pb-4"></div>
-        </div>
-
-        <!-- 3. Dijital HiFi Tuner Radyo -->
-        <div id="view-radio" class="module-view hidden flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-3">
-          <!-- HiFi RDS Tuner Ekranı -->
-          <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-b from-[#1E170C] to-[#0D0A06] border border-amber-500/50 amber-glow space-y-3 shrink-0">
-            <div class="flex items-center justify-between text-[10px] font-mono text-amber-400/90">
-              <span>SYSTEM FREQ // LOCKED HIFI RDS</span>
-              <button onclick="switchModule('settings')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold">+ M3U Ekle</button>
-            </div>
-            
-            <div class="text-center py-2">
-              <div id="tuner-station-title" class="text-2xl sm:text-3xl font-display font-black text-amber-400 tracking-wide">TRT FM</div>
-              <div id="tuner-rds-info" class="text-xs font-mono text-amber-200/80 mt-1">WEB 1 · TÜRKÇE POP · 128 KBPS STEREO</div>
-            </div>
-
-            <!-- Frekans Cetveli Görseli -->
-            <div class="h-6 rounded-xl bg-black/80 border border-amber-500/30 flex items-center justify-between px-3 font-mono text-[10px] text-amber-500/70">
-              <span>88.0</span><span>92.4</span><span class="text-amber-400 font-bold">| 98.6 |</span><span>104.0</span><span>108.0</span>
-            </div>
-
-            <!-- Büyük Tuner Kontrolleri -->
-            <div class="flex items-center justify-center gap-3 pt-1">
-              <button onclick="prevRadio()" class="px-4 py-2.5 rounded-2xl bg-zinc-900 border border-amber-500/40 text-amber-400 font-bold text-sm">◀ Önceki</button>
-              <button onclick="toggleRadioPlay()" id="tuner-main-play" class="px-6 py-2.5 rounded-2xl bg-amber-500 text-black font-display font-black text-sm shadow-lg shadow-amber-500/30">▶ ÇAL / DURAKLAT</button>
-              <button onclick="nextRadio()" class="px-4 py-2.5 rounded-2xl bg-zinc-900 border border-amber-500/40 text-amber-400 font-bold text-sm">Sonraki ▶</button>
-            </div>
-            <audio id="radio-player" class="hidden"></audio>
-          </div>
-
-          <div id="radio-list-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pb-4"></div>
-        </div>
-
-        <!-- 4. Favoriler -->
-        <div id="view-favorites" class="module-view hidden flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-3">
-          <h3 class="text-lg font-display font-extrabold text-amber-400">★ Favori Kanal & Radyolar</h3>
-          <div id="favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto pb-4"></div>
-        </div>
-
-        <!-- 5. Araç İçi Tarayıcı -->
-        <div id="view-browser" class="module-view hidden flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-3">
-          <div class="flex gap-2">
-            <input id="browser-input" type="text" placeholder="Web adresi veya arama terimi..." class="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-amber-500/40 text-sm text-white focus:outline-none" />
-            <button onclick="openWebQuery()" class="px-5 py-3 rounded-xl bg-amber-500 text-black font-extrabold text-xs">GİT</button>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <button onclick="window.open('https://www.google.com', '_blank')" class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 text-amber-400 font-bold text-xs">Google</button>
-            <button onclick="window.open('https://www.youtube.com', '_blank')" class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 text-amber-400 font-bold text-xs">YouTube</button>
-            <button onclick="window.open('https://www.tabii.com', '_blank')" class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 text-amber-400 font-bold text-xs">TRT Tabii</button>
-            <button onclick="window.open('https://maps.google.com', '_blank')" class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 text-amber-400 font-bold text-xs">Haritalar</button>
+        <!-- En Alt Kategori ve Ev Çubuğu -->
+        <div class="px-3 py-2 bg-zinc-950 flex items-center justify-between border-t border-zinc-900">
+          <button onclick="openScreen('screen-tv-groups')" class="px-3.5 py-1.5 rounded-full bg-zinc-900 text-xs font-bold text-white flex items-center gap-1.5">
+            <span>←</span><span id="player-group-label">Ulusal</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openAddLinkModal()" class="px-3 py-1 rounded-full bg-zinc-900 text-amber-400 text-xs font-bold">+ Kanal Ekle</button>
+            <button onclick="openScreen('screen-home')" class="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center text-sm">🏠</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- 6. M3U & Ayarlar -->
-        <div id="view-settings" class="module-view hidden flex-1 flex flex-col max-w-4xl mx-auto w-full space-y-3.5">
-          <h3 class="text-lg font-display font-extrabold text-amber-400">M3U Liste Yönetimi & Ayarlar</h3>
-          
-          <div class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 space-y-2.5">
-            <div class="font-bold text-xs text-amber-400">+ Özel TV / Radyo M3U8 Linki Ekle</div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input id="new-ch-name" type="text" placeholder="Kanal Adı" class="px-3 py-2.5 rounded-xl bg-black border border-zinc-700 text-xs text-white" />
-              <input id="new-ch-url" type="text" placeholder="https://...m3u8" class="px-3 py-2.5 rounded-xl bg-black border border-zinc-700 text-xs text-white" />
-              <button onclick="addCustomChannel()" class="px-4 py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs">EKLE</button>
-            </div>
-          </div>
+  <!-- ==================== 4. RADYO EKRANI ==================== -->
+  <div id="screen-radio" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-3 sm:p-5 max-w-3xl mx-auto w-full space-y-3">
+      <!-- Radyo Tuner Kartı -->
+      <div class="p-5 rounded-3xl bg-gradient-to-br from-[#261b12] to-[#120e0a] border border-amber-400/50 text-center space-y-2">
+        <div class="text-[10px] font-mono text-amber-400 tracking-widest">CANLI FM / WEB RADYO</div>
+        <div id="radio-now-name" class="text-2xl sm:text-3xl font-display font-black text-white">TRT FM</div>
+        <div id="radio-now-desc" class="text-xs text-amber-200/80">Türkçe Pop · Canlı Yayın</div>
+        <div class="flex items-center justify-center gap-4 pt-2">
+          <button onclick="prevRadioStation()" class="px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-white text-sm">⏮ Önceki</button>
+          <button onclick="toggleRadioAudio()" id="radio-main-btn" class="px-6 py-2.5 rounded-full bg-amber-400 text-black font-black text-sm">▶ Çal</button>
+          <button onclick="nextRadioStation()" class="px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-white text-sm">Sonraki ⏭</button>
+        </div>
+        <audio id="audio-element" class="hidden"></audio>
+      </div>
 
-          <div class="p-4 rounded-2xl bg-[#16120C] border border-amber-500/30 space-y-2.5">
-            <div class="font-bold text-xs text-amber-400">📂 Telefondan .M3U / .M3U8 Dosyası Yükle</div>
-            <input type="file" accept=".m3u,.m3u8,.txt" onchange="importM3uFile(event)" class="block w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black" />
-            <div class="flex items-center justify-between pt-2 border-t border-zinc-800">
-              <span id="custom-count-info" class="text-xs text-zinc-400">Yüklü özel kanal: 0</span>
-              <button onclick="confirmDeleteCustomList()" class="px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 font-bold text-xs">🗑️ Özel Listeyi Sil</button>
-            </div>
+      <!-- Radyo İstasyon Listesi -->
+      <div id="radio-stations-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pb-4"></div>
+    </div>
+
+    <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 text-sm font-bold text-white">← Radyo</button>
+      <button onclick="openScreen('screen-home')" class="w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center">🏠</button>
+    </div>
+  </div>
+
+  <!-- ==================== 5. MEDYA & WEB TARAYICI EKRANI ==================== -->
+  <div id="screen-media" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full space-y-4">
+      <h2 class="text-lg font-display font-bold text-amber-400">🎵 Yerel Medya & Müzik Çalar</h2>
+      <div class="p-4 rounded-2xl bg-zinc-900/90 border border-amber-500/30 space-y-3">
+        <p class="text-xs text-zinc-300">Telefonunuzdaki veya USB bellekteki MP3 / MP4 dosyalarını seçip araçta oynatın:</p>
+        <input type="file" accept="audio/*,video/*" onchange="playLocalMedia(event)" class="block w-full text-xs text-zinc-300 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-400 file:text-black file:font-bold" />
+        <video id="local-media-player" controls class="w-full rounded-xl bg-black max-h-60 hidden"></video>
+      </div>
+    </div>
+    <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 text-sm font-bold text-white">← Medya</button>
+      <button onclick="openScreen('screen-home')" class="w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center">🏠</button>
+    </div>
+  </div>
+
+  <div id="screen-browser" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full space-y-4">
+      <h2 class="text-lg font-display font-bold text-amber-400">🌐 Araç İçi Web Tarayıcı</h2>
+      <div class="flex gap-2">
+        <input id="web-url-input" type="text" placeholder="Web adresi veya Google araması yazın..." class="flex-1 px-4 py-3 rounded-2xl bg-zinc-900 border border-amber-500/40 text-sm text-white focus:outline-none" />
+        <button onclick="launchWebSearch()" class="px-5 py-3 rounded-2xl bg-amber-400 text-black font-black text-xs">GİT</button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <button onclick="openQuickWeb('YouTube', 'https://www.youtube.com')" class="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs">▶️ YouTube</button>
+        <button onclick="openQuickWeb('Google', 'https://www.google.com')" class="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs">🔍 Google</button>
+        <button onclick="openQuickWeb('TRT Tabii', 'https://www.tabii.com')" class="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs">🎬 TRT Tabii</button>
+        <button onclick="openQuickWeb('Haritalar', 'https://maps.google.com')" class="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs">🗺️ Haritalar</button>
+      </div>
+    </div>
+    <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 text-sm font-bold text-white">← Tarayıcı</button>
+      <button onclick="openScreen('screen-home')" class="w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center">🏠</button>
+    </div>
+  </div>
+
+  <!-- ==================== 6. AYARLAR EKRANI (GÖRSELDEKİ 8 SIRALI KART) ==================== -->
+  <div id="screen-settings" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-3 sm:p-5 max-w-2xl mx-auto w-full space-y-2.5">
+      
+      <button onclick="toggleNightMode()" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">⚙️</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Arayüz</div>
+            <div class="text-xs text-zinc-400">Gece sürüş filtresi ve kehribar tema</div>
           </div>
         </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
 
-      </main>
+      <button onclick="alert('Hey Seyir Sesli Komut Aktif: \"TRT 1 aç\", \"Radyo aç\" diyebilirsiniz.')" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">🎙️</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Ses ve asistan</div>
+            <div class="text-xs text-zinc-400">Sesli komutlar, yapay zeka asistanı, karşılama mesajı</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="openAddLinkModal()" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">🎬</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Oynatma ayarları</div>
+            <div class="text-xs text-zinc-400">HLS / MPEG-TS çoklu motor ve M3U link ekleme</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="clearHomeHistory()" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">🏠</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Ana ekran</div>
+            <div class="text-xs text-zinc-400">Gezinme sırasını da kontrol eder (Geçmişi temizle)</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="openScreen('screen-home')" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">🎛️</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Araç Uygulamaları</div>
+            <div class="text-xs text-zinc-400">Araç ekranında görünecek uygulamaları seçin</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="openQuickWeb('YouTube', 'https://www.youtube.com')" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">▶️</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">YouTube</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="openAddLinkModal()" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">🌐</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Eklentiler</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+      <button onclick="resetAllData()" class="w-full p-4 rounded-2xl bg-[#191612] hover:bg-[#221e18] border border-zinc-800/90 flex items-center justify-between text-left">
+        <div class="flex items-center gap-3.5">
+          <span class="text-amber-400 text-xl">•••</span>
+          <div>
+            <div class="font-bold text-sm sm:text-base text-white">Diğer</div>
+          </div>
+        </div>
+        <span class="text-zinc-400 text-lg">›</span>
+      </button>
+
+    </div>
+
+    <!-- En Alt Sabit Ayarlar Barı -->
+    <div class="h-14 shrink-0 px-4 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <span class="text-sm font-bold text-white">Ayarlar</span>
+      <button onclick="openScreen('screen-home')" class="w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center text-base">🏠</button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: KANAL / M3U LİNK EKLEME PENCERESİ ==================== -->
+  <div id="modal-add-link" class="hidden fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-3xl bg-[#181410] border border-amber-400/50 p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-display font-bold text-amber-400">📺 Yeni Kanal veya M3U Ekle</h3>
+        <button onclick="closeAddLinkModal()" class="text-zinc-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-zinc-400 block mb-1">1. Kanal veya Liste İsmi</label>
+          <input id="input-link-name" type="text" placeholder="Örn: Spor Listem veya Kanal D" class="w-full px-3.5 py-2.5 rounded-xl bg-black border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-xs text-zinc-400 block mb-1">2. Yayın Linki (.m3u8, .m3u, .ts veya Akış URL)</label>
+          <input id="input-link-url" type="text" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl bg-black border border-zinc-700 text-sm text-white focus:border-amber-400 focus:outline-none" />
+        </div>
+        <button onclick="saveSingleLink()" class="w-full py-3 rounded-xl bg-amber-400 text-black font-display font-black text-sm">KAYDET VE LİSTEYE EKLE</button>
+
+        <div class="border-t border-zinc-800 pt-3">
+          <label class="text-xs text-amber-300 block mb-1.5">Veya Telefondan .M3U / .M3U8 Dosyası Seç:</label>
+          <input type="file" accept=".m3u,.m3u8,.txt" onchange="uploadM3uPlaylist(event)" class="block w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-zinc-800 file:text-amber-300 file:font-bold" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: FAVORİLERİM ==================== -->
+  <div id="modal-favorites" class="hidden fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-3xl bg-[#181410] border border-amber-400/50 p-5 space-y-3 max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-display font-bold text-amber-400">♥ Favorilerim</h3>
+        <button onclick="document.getElementById('modal-favorites').classList.add('hidden')" class="text-zinc-400 text-lg">✕</button>
+      </div>
+      <div id="favorites-modal-list" class="overflow-y-auto space-y-2 flex-1"></div>
     </div>
   </div>
 
   <script>
-    setTimeout(() => {
-      const s = document.getElementById('splash-screen');
-      if (s) { s.style.opacity = '0'; setTimeout(() => s.remove(), 700); }
-    }, 1400);
-
-    function updateClock() {
+    // --- SAAT & TARİH ---
+    function updateDateTime() {
       const now = new Date();
-      document.getElementById('live-clock').textContent =
-        String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+      const days = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+      document.getElementById('home-clock').textContent =
+        String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      document.getElementById('home-date').textContent =
+        `${now.getDate()} ${months[now.getMonth()]} ${days[now.getDay()]}`;
     }
-    updateClock();
-    setInterval(updateClock, 10000);
+    updateDateTime();
+    setInterval(updateDateTime, 15000);
 
-    const defaultTvChannels = [
-      { id: 'trt1', name: 'TRT 1 HD', cat: 'Ulusal', url: 'https://tv-trt1.medya.trt.com.tr/master.m3u8' },
-      { id: 'trt2', name: 'TRT 2 HD', cat: 'Ulusal', url: 'https://tv-trt2.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtturk', name: 'TRT Türk', cat: 'Ulusal', url: 'https://tv-trtturk.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtavaz', name: 'TRT Avaz', cat: 'Ulusal', url: 'https://tv-trtavaz.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtbelgesel', name: 'TRT Belgesel', cat: 'Ulusal', url: 'https://tv-trtbelgesel.medya.trt.com.tr/master.m3u8' },
-      { id: 'trthaber', name: 'TRT Haber', cat: 'Haber', url: 'https://tv-trthaber.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtworld', name: 'TRT World', cat: 'Haber', url: 'https://tv-trtworld.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtspor', name: 'TRT Spor', cat: 'Spor', url: 'https://tv-trtspor1.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtsporyildiz', name: 'TRT Spor Yıldız', cat: 'Spor', url: 'https://tv-trtspor2.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtcocuk', name: 'TRT Çocuk', cat: 'Çocuk', url: 'https://tv-trtcocuk.medya.trt.com.tr/master.m3u8' },
-      { id: 'trteba', name: 'TRT EBA', cat: 'Çocuk', url: 'https://tv-e-okul00.medya.trt.com.tr/master.m3u8' },
-      { id: 'trtmuzik', name: 'TRT Müzik', cat: 'Ulusal', url: 'https://tv-trtmuzik.medya.trt.com.tr/master.m3u8' }
+    // --- VARSAYILAN VERİLER ---
+    const defaultChannels = [
+      { id: 'trt1', name: 'TRT 1', group: 'Ulusal', desc: 'Canlı HD Yayın', url: 'https://tv-trt1.medya.trt.com.tr/master.m3u8' },
+      { id: 'trt2', name: 'TRT 2', group: 'Ulusal', desc: 'Kültür & Sanat', url: 'https://tv-trt2.medya.trt.com.tr/master.m3u8' },
+      { id: 'trthaber', name: 'TRT Haber', group: 'Haber', desc: 'Canlı Haber Akışı', url: 'https://tv-trthaber.medya.trt.com.tr/master.m3u8' },
+      { id: 'trtspor', name: 'TRT Spor', group: 'Spor', desc: 'Spor Yayınları', url: 'https://tv-trtspor1.medya.trt.com.tr/master.m3u8' },
+      { id: 'trtcocuk', name: 'TRT Çocuk', group: 'Çocuk', desc: 'Çocuk Kanalları', url: 'https://tv-trtcocuk.medya.trt.com.tr/master.m3u8' },
+      { id: 'trtbelgesel', name: 'TRT Belgesel', group: 'Ulusal', desc: 'Belgesel Kuşağı', url: 'https://tv-trtbelgesel.medya.trt.com.tr/master.m3u8' }
     ];
 
-    const radioStations = [
-      { id: 'r1', name: 'TRT FM', genre: 'WEB 1 · TÜRKÇE POP · 128 KBPS', url: 'https://trt.radyotvonline.net/trt1.aac' },
-      { id: 'r2', name: 'TRT Türkü', genre: 'WEB 2 · HALK MÜZİĞİ · 128 KBPS', url: 'https://trt.radyotvonline.net/trtturku.aac' },
-      { id: 'r3', name: 'TRT Radyo 1', genre: 'WEB 3 · HABER & KÜLTÜR · 128 KBPS', url: 'https://trt.radyotvonline.net/trtradyo1.aac' },
-      { id: 'r4', name: 'TRT Nağme', genre: 'WEB 4 · SANAT MÜZİĞİ · 128 KBPS', url: 'https://trt.radyotvonline.net/trtnagme.aac' },
-      { id: 'r5', name: 'Kral Pop Radyo', genre: 'WEB 5 · HİT POP · HLS STEREO', url: 'https://ssldyg.radyotvonline.com/smil/smil:kralpop.smil/playlist.m3u8' },
-      { id: 'r6', name: 'Kral FM', genre: 'WEB 6 · ARABESK & FANTAZİ · HLS', url: 'https://ssldyg.radyotvonline.com/smil/smil:kralfm.smil/playlist.m3u8' },
-      { id: 'r7', name: 'Süper FM', genre: 'WEB 7 · TÜRKÇE POP · MP3', url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/SUPER_FM.mp3' },
-      { id: 'r8', name: 'Slow Türk', genre: 'WEB 8 · SLOW MÜZİK · AAC', url: 'https://radyo.duhnet.tv/slowturk' }
+    const radioList = [
+      { id: 'rad1', name: 'TRT FM', desc: 'Türkçe Pop · Canlı', url: 'https://trt.radyotvonline.net/trt1.aac' },
+      { id: 'rad2', name: 'TRT Türkü', desc: 'Türk Halk Müziği', url: 'https://trt.radyotvonline.net/trtturku.aac' },
+      { id: 'rad3', name: 'TRT Radyo 1', desc: 'Haber & Kültür', url: 'https://trt.radyotvonline.net/trtradyo1.aac' },
+      { id: 'rad4', name: 'Kral Pop', desc: 'Hit Pop Müzik', url: 'https://ssldyg.radyotvonline.com/smil/smil:kralpop.smil/playlist.m3u8' },
+      { id: 'rad5', name: 'Kral FM', desc: 'Arabesk & Fantazi', url: 'https://ssldyg.radyotvonline.com/smil/smil:kralfm.smil/playlist.m3u8' },
+      { id: 'rad6', name: 'Süper FM', desc: 'Türkçe Pop', url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/SUPER_FM.mp3' }
     ];
 
-    let customChannels = JSON.parse(localStorage.getItem('seyir_custom_channels') || '[]');
-    let favorites = JSON.parse(localStorage.getItem('seyir_favorites') || '[]');
-    let currentCategory = 'Tümü';
+    let customLists = JSON.parse(localStorage.getItem('seyir_v2_custom_lists') || '[]');
+    let tvHistory = JSON.parse(localStorage.getItem('seyir_v2_tv_hist') || JSON.stringify(defaultChannels.slice(0,4)));
+    let radioHistory = JSON.parse(localStorage.getItem('seyir_v2_rad_hist') || JSON.stringify(radioList.slice(0,4)));
+    let ytHistory = JSON.parse(localStorage.getItem('seyir_v2_yt_hist') || JSON.stringify([
+      { name: 'YouTube Ana Sayfa', url: 'https://www.youtube.com' },
+      { name: 'Türkçe Müzik Mix', url: 'https://www.youtube.com/results?search_query=türkçe+müzik+mix' },
+      { name: 'Sürüş Şarkıları', url: 'https://www.youtube.com/results?search_query=araba+müzikleri' },
+      { name: 'Canlı Haberler', url: 'https://www.youtube.com/results?search_query=canlı+haber' }
+    ]));
+    let favorites = JSON.parse(localStorage.getItem('seyir_v2_favs') || '[]');
+
+    let activeHeroIdx = 0;
+    let activeChannelList = [...defaultChannels];
+    let currentChannelIdx = 0;
     let currentRadioIdx = 0;
-    let isRadioPlaying = false;
+    let hlsPlayer = null;
+    let tsPlayer = null;
+    let engineMode = 'AUTO';
 
-    function getAllTvChannels() { return [...defaultTvChannels, ...customChannels]; }
-
-    function updateCounts() {
-      const total = getAllTvChannels().length;
-      document.getElementById('driver-tv-count').textContent = 'Kayıtlı Kanallar: ' + total + ' Adet';
-      document.getElementById('custom-count-info').textContent = 'Yüklü özel kanal: ' + customChannels.length;
+    // --- EKRAN GEÇİŞLERİ ---
+    function openScreen(id) {
+      document.querySelectorAll('.screen-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'screen-home') renderHeroCard();
+      if (id === 'screen-tv-groups') renderTvGroups();
+      if (id === 'screen-radio') renderRadioStations();
     }
 
-    function toggleFavorite(item) {
-      const exists = favorites.find(f => f.id === item.id);
-      favorites = exists ? favorites.filter(f => f.id !== item.id) : [...favorites, item];
-      localStorage.setItem('seyir_favorites', JSON.stringify(favorites));
-      renderTvList(currentCategory);
-      renderRadioList();
-      renderFavorites();
-    }
-
-    function isFav(id) { return favorites.some(f => f.id === id); }
-
-    function renderTvList(category) {
-      currentCategory = category;
-      document.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.className = btn.textContent.trim() === category
-          ? 'cat-btn px-3 py-1.5 rounded-xl bg-amber-500 text-black font-bold text-xs shrink-0'
-          : 'cat-btn px-3 py-1.5 rounded-xl bg-zinc-900 border border-amber-500/30 text-amber-400 font-bold text-xs shrink-0';
+    // --- ANA EKRAN KAYDIRILABİLİR KART (TV / RADYO / YOUTUBE) ---
+    function setHeroCard(idx) {
+      activeHeroIdx = (idx + 3) % 3;
+      [0, 1, 2].forEach(i => {
+        const dot = document.getElementById('dot-' + i);
+        dot.className = i === activeHeroIdx
+          ? 'px-3.5 py-1 rounded-full bg-amber-400 text-black font-bold text-xs transition'
+          : 'px-3.5 py-1 rounded-full bg-zinc-900/80 text-zinc-300 border border-zinc-700 font-bold text-xs transition';
       });
-      const list = getAllTvChannels().filter(ch => category === 'Tümü' || ch.cat === category);
-      document.getElementById('tv-channel-grid').innerHTML = list.map(ch => `
-        <div class="p-3 rounded-2xl bg-[#16120C] border border-amber-500/30 flex items-center justify-between gap-2">
-          <button onclick="playStream('${ch.url}', '${ch.name.replace(/'/g, '')}')" class="flex-1 text-left">
-            <div class="font-bold text-sm text-white">${ch.name}</div>
-            <div class="text-[10px] text-amber-400/80 font-mono">${ch.cat}</div>
+      renderHeroCard();
+    }
+
+    function renderHeroCard() {
+      const badge = document.getElementById('hero-badge');
+      const title = document.getElementById('hero-title');
+      const sub = document.getElementById('hero-subtitle');
+      const histLabel = document.getElementById('hero-history-label');
+      const grid = document.getElementById('hero-history-grid');
+
+      if (activeHeroIdx === 0) {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> CANLI YAYIN';
+        title.textContent = 'TV';
+        sub.textContent = tvHistory[0] ? `Son izlenen: ${tvHistory[0].name}` : 'Canlı TV Kanalları';
+        histLabel.textContent = 'SON İZLENEN KANALLAR';
+        grid.innerHTML = tvHistory.slice(0, 4).map((ch, idx) => `
+          <button onclick='playChannelFromHome(${JSON.stringify(ch)})' class="p-2.5 sm:p-3 rounded-2xl bg-black/65 hover:bg-black border ${idx === 0 ? 'border-amber-400' : 'border-zinc-700/80'} flex flex-col items-center justify-center gap-1.5 text-center transition">
+            <span class="text-amber-400 text-lg sm:text-xl">📺</span>
+            <span class="text-[11px] sm:text-xs font-bold text-white truncate w-full">${ch.name}</span>
           </button>
-          <button onclick='toggleFavorite(${JSON.stringify({id: ch.id, name: ch.name, url: ch.url, type: "tv"})})' class="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 text-sm ${isFav(ch.id) ? 'text-amber-400' : 'text-zinc-500'}">★</button>
-        </div>
-      `).join('');
-    }
-
-    function renderRadioList() {
-      document.getElementById('radio-list-grid').innerHTML = radioStations.map((r, idx) => `
-        <div class="p-3.5 rounded-2xl bg-[#16120C] border ${idx === currentRadioIdx ? 'border-amber-400' : 'border-amber-500/30'} flex items-center justify-between gap-2">
-          <button onclick="selectAndPlayRadio(${idx})" class="flex-1 text-left">
-            <div class="font-bold text-sm text-white">📻 ${r.name}</div>
-            <div class="text-[10px] font-mono text-amber-400/80">${r.genre}</div>
+        `).join('');
+      } else if (activeHeroIdx === 1) {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> FM / DİJİTAL RADYO';
+        title.textContent = 'Radyo';
+        sub.textContent = radioHistory[0] ? `Son dinlenen: ${radioHistory[0].name}` : 'Canlı Radyo İstasyonları';
+        histLabel.textContent = 'SON DİNLENEN RADYOLAR';
+        grid.innerHTML = radioHistory.slice(0, 4).map((r, idx) => `
+          <button onclick='playRadioFromHome(${JSON.stringify(r)})' class="p-2.5 sm:p-3 rounded-2xl bg-black/65 hover:bg-black border ${idx === 0 ? 'border-amber-400' : 'border-zinc-700/80'} flex flex-col items-center justify-center gap-1.5 text-center transition">
+            <span class="text-amber-400 text-lg sm:text-xl">📻</span>
+            <span class="text-[11px] sm:text-xs font-bold text-white truncate w-full">${r.name}</span>
           </button>
-          <button onclick='toggleFavorite(${JSON.stringify({id: r.id, name: r.name, url: r.url, type: "radio", idx})})' class="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 text-sm ${isFav(r.id) ? 'text-amber-400' : 'text-zinc-500'}">★</button>
-        </div>
-      `).join('');
-    }
-
-    function renderFavorites() {
-      const grid = document.getElementById('favorites-grid');
-      if (!favorites.length) {
-        grid.innerHTML = '<div class="text-xs text-zinc-400 p-4">Henüz favori eklemediniz. Kanal veya radyo yanındaki ★ yıldız butonuna basarak ekleyebilirsiniz.</div>';
-        return;
-      }
-      grid.innerHTML = favorites.map(f => `
-        <div class="p-3.5 rounded-2xl bg-[#16120C] border border-amber-500/40 flex items-center justify-between gap-2">
-          <button onclick="${f.type === 'tv' ? `switchModule('iptv'); playStream('${f.url}', '${f.name}')` : `switchModule('radio'); selectAndPlayRadio(${f.idx || 0})`}" class="flex-1 text-left font-bold text-sm text-white">
-            ${f.type === 'tv' ? '📺' : '📻'} ${f.name}
+        `).join('');
+      } else {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> VİDEO & MÜZİK';
+        title.textContent = 'YouTube';
+        sub.textContent = 'Sürüş listeleri ve video akışı';
+        histLabel.textContent = 'SON ZİYARET EDİLENLER';
+        grid.innerHTML = ytHistory.slice(0, 4).map((y, idx) => `
+          <button onclick="openQuickWeb('${y.name}', '${y.url}')" class="p-2.5 sm:p-3 rounded-2xl bg-black/65 hover:bg-black border ${idx === 0 ? 'border-amber-400' : 'border-zinc-700/80'} flex flex-col items-center justify-center gap-1.5 text-center transition">
+            <span class="text-red-400 text-lg sm:text-xl">▶️</span>
+            <span class="text-[11px] sm:text-xs font-bold text-white truncate w-full">${y.name}</span>
           </button>
-          <button onclick='toggleFavorite(${JSON.stringify(f)})' class="px-3 py-1 rounded-xl bg-red-500/20 text-red-400 text-xs font-bold">Çıkar</button>
+        `).join('');
+      }
+    }
+
+    function openCurrentHeroModule() {
+      if (activeHeroIdx === 0) openScreen('screen-tv-groups');
+      else if (activeHeroIdx === 1) openScreen('screen-radio');
+      else openQuickWeb('YouTube', 'https://www.youtube.com');
+    }
+
+    // Parmakla Sağa / Sola Kaydırma (Touch Swipe)
+    let touchStartX = 0;
+    const swipeArea = document.getElementById('hero-swipe-area');
+    swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+    swipeArea.addEventListener('touchend', e => {
+      const diff = e.changedTouches[0].screenX - touchStartX;
+      if (Math.abs(diff) > 45) setHeroCard(diff < 0 ? activeHeroIdx + 1 : activeHeroIdx - 1);
+    }, { passive: true });
+
+    // --- TV GRUPLARI, EKLEME VE SİLME ---
+    function renderTvGroups() {
+      const container = document.getElementById('tv-groups-container');
+      let html = `
+        <div onclick='openChannelGroup("TV KANALLARIM", ${JSON.stringify(defaultChannels)})' class="p-4 rounded-2xl bg-[#181512] hover:bg-[#221d18] border border-zinc-800 flex items-center justify-between cursor-pointer">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-zinc-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-xl">📺</div>
+            <div>
+              <div class="font-display font-bold text-base text-white">TV KANALLARIM</div>
+              <div class="text-xs text-zinc-400">Kanallar: ${defaultChannels.length}</div>
+            </div>
+          </div>
+          <span class="text-zinc-400 text-lg">›</span>
         </div>
-      `).join('');
+      `;
+
+      customLists.forEach((grp, idx) => {
+        html += `
+          <div class="p-4 rounded-2xl bg-[#181512] border border-amber-500/30 flex items-center justify-between gap-2">
+            <div onclick='openChannelGroup("${grp.title}", ${JSON.stringify(grp.channels)})' class="flex items-center gap-3.5 flex-1 cursor-pointer">
+              <div class="w-11 h-11 rounded-xl bg-zinc-900 border border-amber-400/50 flex items-center justify-center text-amber-400 text-xl">📺</div>
+              <div>
+                <div class="font-display font-bold text-base text-white">${grp.title}</div>
+                <div class="text-xs text-zinc-400">Kanallar: ${grp.channels.length}</div>
+              </div>
+            </div>
+            <button onclick="deleteCustomGroup(${idx})" class="px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/40 text-red-400 text-xs font-bold">🗑️ Sil</button>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
     }
 
-    let hlsInstance = null;
-    function playStream(url, title) {
-      const video = document.getElementById('tv-player');
-      document.getElementById('channel-badge').textContent = '● CANLI: ' + title;
-      if (hlsInstance) hlsInstance.destroy();
-      if (Hls.isSupported()) {
-        hlsInstance = new Hls();
-        hlsInstance.loadSource(url);
-        hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-      } else {
-        video.src = url;
-        video.play();
+    function deleteCustomGroup(idx) {
+      const target = customLists[idx];
+      if (confirm(`"${target.title}" listesini ve içindeki ${target.channels.length} kanalı silmek istediğinize emin misiniz?`)) {
+        customLists.splice(idx, 1);
+        localStorage.setItem('seyir_v2_custom_lists', JSON.stringify(customLists));
+        renderTvGroups();
       }
     }
 
-    let radioHls = null;
-    function selectAndPlayRadio(idx) {
-      currentRadioIdx = (idx + radioStations.length) % radioStations.length;
-      const st = radioStations[currentRadioIdx];
-      const audio = document.getElementById('radio-player');
+    function openAddLinkModal() { document.getElementById('modal-add-link').classList.remove('hidden'); }
+    function closeAddLinkModal() { document.getElementById('modal-add-link').classList.add('hidden'); }
 
-      document.getElementById('tuner-station-title').textContent = st.name;
-      document.getElementById('tuner-rds-info').textContent = st.genre;
-      document.getElementById('mini-radio-name').textContent = st.name + ' · WEB ' + (currentRadioIdx + 1);
-      document.getElementById('driver-radio-now').textContent = 'Çalan: ' + st.name;
-
-      if (radioHls) { radioHls.destroy(); radioHls = null; }
-      if (st.url.includes('.m3u8') && Hls.isSupported()) {
-        radioHls = new Hls();
-        radioHls.loadSource(st.url);
-        radioHls.attachMedia(audio);
-        radioHls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
-      } else {
-        audio.src = st.url;
-        audio.play();
-      }
-      isRadioPlaying = true;
-      document.getElementById('mini-play-btn').textContent = '⏸';
-      renderRadioList();
+    function saveSingleLink() {
+      const name = document.getElementById('input-link-name').value.trim();
+      const url = document.getElementById('input-link-url').value.trim();
+      if (!name || !url) { alert('Lütfen kanal ismini ve yayın linkini girin.'); return; }
+      customLists.push({
+        title: name,
+        channels: [{ id: 'c_' + Date.now(), name, group: name, desc: 'Özel Yayın Linki', url }]
+      });
+      localStorage.setItem('seyir_v2_custom_lists', JSON.stringify(customLists));
+      document.getElementById('input-link-name').value = '';
+      document.getElementById('input-link-url').value = '';
+      closeAddLinkModal();
+      openScreen('screen-tv-groups');
     }
 
-    function toggleRadioPlay() {
-      const audio = document.getElementById('radio-player');
-      if (!audio.src) { selectAndPlayRadio(currentRadioIdx); return; }
-      if (audio.paused) {
-        audio.play();
-        isRadioPlaying = true;
-        document.getElementById('mini-play-btn').textContent = '⏸';
-      } else {
-        audio.pause();
-        isRadioPlaying = false;
-        document.getElementById('mini-play-btn').textContent = '▶';
-      }
-    }
-
-    function nextRadio() { selectAndPlayRadio(currentRadioIdx + 1); }
-    function prevRadio() { selectAndPlayRadio(currentRadioIdx - 1); }
-
-    function addCustomChannel() {
-      const name = document.getElementById('new-ch-name').value.trim();
-      const url = document.getElementById('new-ch-url').value.trim();
-      if (!name || !url) { alert('Kanal adı ve M3U8 linkini girin.'); return; }
-      customChannels.push({ id: 'c_' + Date.now(), name, cat: 'Özel M3U', url });
-      localStorage.setItem('seyir_custom_channels', JSON.stringify(customChannels));
-      document.getElementById('new-ch-name').value = '';
-      document.getElementById('new-ch-url').value = '';
-      updateCounts();
-      renderTvList('Özel M3U');
-      alert(name + ' eklendi!');
-    }
-
-    function importM3uFile(event) {
+    function uploadM3uPlaylist(event) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(e) {
         const lines = e.target.result.split(/\r?\n/);
-        let currentName = 'Özel Kanal', added = 0;
-        lines.forEach(line => {
-          line = line.trim();
-          if (line.startsWith('#EXTINF:')) {
-            const parts = line.split(',');
-            currentName = parts[parts.length - 1].trim() || 'Özel Kanal';
-          } else if (line.startsWith('http')) {
-            customChannels.push({ id: 'm_' + Date.now() + '_' + added, name: currentName, cat: 'Özel M3U', url: line });
-            added++;
+        const parsed = [];
+        let chName = 'Kanal';
+        lines.forEach(l => {
+          l = l.trim();
+          if (l.startsWith('#EXTINF:')) {
+            const p = l.split(',');
+            chName = p[p.length - 1].trim() || 'Kanal';
+          } else if (l.startsWith('http')) {
+            parsed.push({ id: 'm_' + Date.now() + '_' + parsed.length, name: chName, group: file.name, desc: 'M3U Akışı', url: l });
           }
         });
-        localStorage.setItem('seyir_custom_channels', JSON.stringify(customChannels));
-        updateCounts();
-        renderTvList('Özel M3U');
-        alert(added + ' kanal başarıyla yüklendi!');
+        if (parsed.length) {
+          customLists.push({ title: file.name.replace(/\.[^/.]+$/, ''), channels: parsed });
+          localStorage.setItem('seyir_v2_custom_lists', JSON.stringify(customLists));
+          closeAddLinkModal();
+          openScreen('screen-tv-groups');
+          alert(parsed.length + ' kanal başarıyla eklendi!');
+        }
       };
       reader.readAsText(file);
     }
 
-    function confirmDeleteCustomList() {
-      if (!customChannels.length) { alert('Silinecek özel liste yok.'); return; }
-      if (confirm('Yüklü ' + customChannels.length + ' adet özel kanalı silmek istediğinize emin misiniz?')) {
-        customChannels = [];
-        localStorage.removeItem('seyir_custom_channels');
-        updateCounts();
-        renderTvList('Tümü');
-        alert('Özel M3U listesi silindi.');
+    // --- ÇOKLU MOTORLU TV OYNATICI (HLS + MPEGTS + NATIVE) ---
+    function openChannelGroup(groupName, channels) {
+      activeChannelList = channels;
+      document.getElementById('player-group-label').textContent = groupName;
+      openScreen('screen-tv-player');
+      playTvChannel(0);
+    }
+
+    function playChannelFromHome(ch) {
+      activeChannelList = [ch, ...defaultChannels.filter(d => d.id !== ch.id)];
+      document.getElementById('player-group-label').textContent = ch.group || 'Canlı TV';
+      openScreen('screen-tv-player');
+      playTvChannel(0);
+    }
+
+    function playTvChannel(idx) {
+      currentChannelIdx = (idx + activeChannelList.length) % activeChannelList.length;
+      const ch = activeChannelList[currentChannelIdx];
+      const video = document.getElementById('video-element');
+
+      document.getElementById('player-channel-name').textContent = ch.name;
+      document.getElementById('top-active-title').textContent = ch.name;
+
+      // Geçmişe kaydet (Ana ekrandaki TV kartında görünmesi için)
+      tvHistory = [ch, ...tvHistory.filter(item => item.name !== ch.name)].slice(0, 6);
+      localStorage.setItem('seyir_v2_tv_hist', JSON.stringify(tvHistory));
+
+      // Eski motorları temizle
+      if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
+      if (tsPlayer) { tsPlayer.destroy(); tsPlayer = null; }
+
+      const url = ch.url;
+      if ((url.includes('.ts') || engineMode === 'TS') && typeof mpegts !== 'undefined' && mpegts.getFeatureList().mseLivePlayback) {
+        tsPlayer = mpegts.createPlayer({ type: 'mpegts', isLive: true, url });
+        tsPlayer.attachMediaElement(video);
+        tsPlayer.load();
+        tsPlayer.play();
+      } else if (Hls.isSupported() && engineMode !== 'NATIVE') {
+        hlsPlayer = new Hls({ enableWorker: true, lowLatencyMode: true });
+        hlsPlayer.loadSource(url);
+        hlsPlayer.attachMedia(video);
+        hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        hlsPlayer.on(Hls.Events.ERROR, (ev, data) => {
+          if (data.fatal) { video.src = url; video.play().catch(()=>{}); }
+        });
+      } else {
+        video.src = url;
+        video.play().catch(()=>{});
+      }
+
+      document.getElementById('video-play-btn').textContent = '⏸';
+      updateFavIconState(ch.name);
+      renderPlayerSideDrawer();
+    }
+
+    function switchStreamEngine() {
+      engineMode = engineMode === 'AUTO' ? 'TS' : (engineMode === 'TS' ? 'NATIVE' : 'AUTO');
+      alert('Oynatıcı Motoru: ' + engineMode + ' moduna geçirildi, yayın yeniden başlatılıyor.');
+      playTvChannel(currentChannelIdx);
+    }
+
+    function renderPlayerSideDrawer() {
+      const drawer = document.getElementById('player-side-drawer');
+      drawer.innerHTML = activeChannelList.map((ch, i) => {
+        const active = i === currentChannelIdx;
+        return `
+          <div onclick="playTvChannel(${i})" class="p-3 rounded-2xl ${active ? 'bg-[#261e14] border-2 border-amber-400' : 'bg-zinc-900/90 border border-zinc-800'} flex items-center justify-between gap-2 cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl ${active ? 'bg-amber-400 text-black' : 'bg-zinc-800 text-zinc-300'} font-display font-black text-sm flex items-center justify-center shrink-0">${i + 1}</div>
+              <div class="truncate">
+                <div class="font-bold text-sm text-white truncate">${ch.name}</div>
+                <div class="text-[11px] text-zinc-400 truncate">${ch.desc || 'Canlı Yayın'}</div>
+              </div>
+            </div>
+            ${active ? '<span class="text-[10px] font-bold text-amber-400 shrink-0">OYNUYOR</span>' : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // TV Ekranına Dokununca Kanal Listesini Aç/Kapat
+    let overlayVisible = true;
+    function togglePlayerOverlay() {
+      overlayVisible = !overlayVisible;
+      document.getElementById('player-top-bar').style.opacity = overlayVisible ? '1' : '0';
+      document.getElementById('player-bottom-bar').style.opacity = overlayVisible ? '1' : '0';
+      document.getElementById('player-side-drawer').style.transform = overlayVisible ? 'translateX(0)' : 'translateX(-110%)';
+    }
+
+    function toggleVideoPlay() {
+      const v = document.getElementById('video-element');
+      if (v.paused) { v.play(); document.getElementById('video-play-btn').textContent = '⏸'; }
+      else { v.pause(); document.getElementById('video-play-btn').textContent = '▶'; }
+    }
+    function nextTvChannel() { playTvChannel(currentChannelIdx + 1); }
+    function prevTvChannel() { playTvChannel(currentChannelIdx - 1); }
+    function toggleVideoFit() {
+      const v = document.getElementById('video-element');
+      v.classList.toggle('object-contain');
+      v.classList.toggle('object-cover');
+    }
+
+    // --- RADYO ---
+    function renderRadioStations() {
+      document.getElementById('radio-stations-list').innerHTML = radioList.map((r, i) => `
+        <button onclick="playRadioIndex(${i})" class="p-4 rounded-2xl bg-[#181512] border ${i === currentRadioIdx ? 'border-amber-400' : 'border-zinc-800'} flex items-center justify-between text-left">
+          <div>
+            <div class="font-bold text-sm text-white">📻 ${r.name}</div>
+            <div class="text-xs text-zinc-400">${r.desc}</div>
+          </div>
+          <span class="text-amber-400 text-sm">▶</span>
+        </button>
+      `).join('');
+    }
+
+    let radHls = null;
+    function playRadioIndex(idx) {
+      currentRadioIdx = (idx + radioList.length) % radioList.length;
+      const r = radioList[currentRadioIdx];
+      const audio = document.getElementById('audio-element');
+      document.getElementById('radio-now-name').textContent = r.name;
+      document.getElementById('radio-now-desc').textContent = r.desc;
+      document.getElementById('top-active-title').textContent = r.name;
+
+      radioHistory = [r, ...radioHistory.filter(x => x.name !== r.name)].slice(0, 6);
+      localStorage.setItem('seyir_v2_rad_hist', JSON.stringify(radioHistory));
+
+      if (radHls) { radHls.destroy(); radHls = null; }
+      if (r.url.includes('.m3u8') && Hls.isSupported()) {
+        radHls = new Hls();
+        radHls.loadSource(r.url);
+        radHls.attachMedia(audio);
+        radHls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
+      } else {
+        audio.src = r.url;
+        audio.play();
+      }
+      document.getElementById('radio-main-btn').textContent = '⏸ Duraklat';
+      renderRadioStations();
+    }
+
+    function playRadioFromHome(r) {
+      const idx = radioList.findIndex(x => x.name === r.name);
+      openScreen('screen-radio');
+      playRadioIndex(idx >= 0 ? idx : 0);
+    }
+
+    function toggleRadioAudio() {
+      const a = document.getElementById('audio-element');
+      if (!a.src) { playRadioIndex(currentRadioIdx); return; }
+      if (a.paused) { a.play(); document.getElementById('radio-main-btn').textContent = '⏸ Duraklat'; }
+      else { a.pause(); document.getElementById('radio-main-btn').textContent = '▶ Çal'; }
+    }
+    function nextRadioStation() { playRadioIndex(currentRadioIdx + 1); }
+    function prevRadioStation() { playRadioIndex(currentRadioIdx - 1); }
+
+    // --- FAVORİLER & YARDIMCILAR ---
+    function toggleCurrentChannelFav() {
+      const ch = activeChannelList[currentChannelIdx];
+      if (!ch) return;
+      const exists = favorites.find(f => f.name === ch.name);
+      favorites = exists ? favorites.filter(f => f.name !== ch.name) : [...favorites, ch];
+      localStorage.setItem('seyir_v2_favs', JSON.stringify(favorites));
+      updateFavIconState(ch.name);
+    }
+
+    function updateFavIconState(name) {
+      const exists = favorites.some(f => f.name === name);
+      const btn = document.getElementById('player-fav-btn');
+      btn.textContent = exists ? '♥' : '♡';
+      btn.className = exists ? 'text-amber-400 text-xl' : 'text-zinc-300 text-xl';
+    }
+
+    function openFavoritesModal() {
+      const list = document.getElementById('favorites-modal-list');
+      list.innerHTML = favorites.length
+        ? favorites.map(f => `
+            <button onclick='document.getElementById("modal-favorites").classList.add("hidden"); playChannelFromHome(${JSON.stringify(f)})' class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between text-left">
+              <span class="font-bold text-sm text-white">♥ ${f.name}</span>
+              <span class="text-xs text-amber-400">Aç ›</span>
+            </button>
+          `).join('')
+        : '<div class="text-xs text-zinc-400 py-4 text-center">Henüz favori kanal eklemediniz. TV oynatıcıdaki ♡ kalp ikonuna basarak ekleyebilirsiniz.</div>';
+      document.getElementById('modal-favorites').classList.remove('hidden');
+    }
+
+    function openQuickWeb(name, url) {
+      ytHistory = [{ name, url }, ...ytHistory.filter(x => x.name !== name)].slice(0, 6);
+      localStorage.setItem('seyir_v2_yt_hist', JSON.stringify(ytHistory));
+      window.open(url, '_blank');
+    }
+
+    function launchWebSearch() {
+      const q = document.getElementById('web-url-input').value.trim();
+      if (!q) return;
+      const url = q.startsWith('http') ? q : 'https://www.google.com/search?q=' + encodeURIComponent(q);
+      openQuickWeb(q, url);
+    }
+
+    function playLocalMedia(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const player = document.getElementById('local-media-player');
+      player.src = URL.createObjectURL(file);
+      player.classList.remove('hidden');
+      player.play();
+    }
+
+    function resumeLastMedia() {
+      if (tvHistory[0]) playChannelFromHome(tvHistory[0]);
+      else openScreen('screen-tv-groups');
+    }
+
+    function filterTvPrompt() {
+      const term = prompt('Aramak istediğiniz kanal veya grup adını yazın:');
+      if (!term) return;
+      const all = [...defaultChannels, ...customLists.flatMap(g => g.channels)];
+      const filtered = all.filter(c => c.name.toLowerCase().includes(term.toLowerCase()));
+      if (filtered.length) openChannelGroup('Arama: ' + term, filtered);
+      else alert('Eşleşen kanal bulunamadı.');
+    }
+
+    function voiceSearchChannel() {
+      alert('Sesli Arama: "TRT 1", "TRT Haber", "TRT Spor" veya "Radyo" diyebilirsiniz.');
+    }
+
+    function toggleNightMode() { document.body.classList.toggle('night-filter'); }
+    function clearHomeHistory() {
+      if (confirm('Ana ekrandaki son izlenenler geçmişi temizlensin mi?')) {
+        tvHistory = defaultChannels.slice(0, 4);
+        localStorage.removeItem('seyir_v2_tv_hist');
+        renderHeroCard();
+      }
+    }
+    function resetAllData() {
+      if (confirm('Tüm özel M3U listeleri, favoriler ve geçmiş sıfırlansın mı?')) {
+        localStorage.clear();
+        location.reload();
       }
     }
 
-    function switchModule(modId) {
-      if (modId === 'youtube') { window.open('https://www.youtube.com', '_blank'); return; }
-      document.querySelectorAll('.module-view').forEach(v => v.classList.add('hidden'));
-      const target = document.getElementById('view-' + modId);
-      if (target) target.classList.remove('hidden');
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.className = btn.getAttribute('data-module') === modId
-          ? 'nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 bg-amber-500 text-black font-extrabold'
-          : 'nav-btn w-14 sm:w-16 h-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-amber-400';
-      });
-    }
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchModule(btn.getAttribute('data-module')));
-    });
-
-    function openWebQuery() {
-      const q = document.getElementById('browser-input').value.trim();
-      if (!q) return;
-      window.open(q.startsWith('http') ? q : 'https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
-    }
-
-    function toggleNightFilter() { document.body.classList.toggle('night-filter'); }
-
-    renderTvList('Tümü');
-    renderRadioList();
-    renderFavorites();
-    updateCounts();
+    // İlk açılış
+    renderHeroCard();
   </script>
 </body>
 </html>
-
