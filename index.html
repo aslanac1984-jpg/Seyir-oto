@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0A0908" />
-  <title>SEYİR Auto — Füme Cam & Kehribar HUD Kokpiti</title>
+  <title>SEYİR Auto — Sesli Asistanlı HUD Kokpiti</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest/dist/mpegts.min.js"></script>
@@ -17,7 +17,6 @@
     .font-mono { font-family: 'JetBrains Mono', monospace; }
     .car-bg { background: radial-gradient(circle at 50% 35%, #261b13 0%, #100e0d 55%, #070708 100%); }
     .gold-glow { box-shadow: 0 0 32px rgba(245, 158, 11, 0.16), inset 0 1px 0 rgba(56, 189, 248, 0.18); }
-    /* Füme Buzlu Cam (Glassmorphism) Kehribar & Turkuaz Kenar Işığı */
     .glass-app-card {
       background: linear-gradient(145deg, rgba(34, 38, 44, 0.72) 0%, rgba(16, 18, 22, 0.88) 100%);
       backdrop-filter: blur(14px);
@@ -38,6 +37,11 @@
       border: 1px solid rgba(251, 191, 36, 0.4);
       box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.2), 0 4px 12px rgba(0, 0, 0, 0.4);
     }
+    .mic-pulse { animation: micRing 1.4s infinite ease-in-out; }
+    @keyframes micRing {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.65), 0 0 24px rgba(251, 191, 36, 0.5); }
+      50% { box-shadow: 0 0 0 16px rgba(34, 211, 238, 0), 0 0 36px rgba(251, 191, 36, 0.8); }
+    }
     .night-filter { filter: sepia(0.35) hue-rotate(-15deg) brightness(0.85); }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: #eab308; border-radius: 9999px; }
@@ -45,7 +49,7 @@
 </head>
 <body class="car-bg text-slate-100 select-none w-screen h-screen flex flex-col">
 
-  <!-- PAYLAŞILAN SVG GRADYAN TANIMLARI (KEHRİBAR + TURKUAZ CAM PARILTISI) -->
+  <!-- PAYLAŞILAN SVG GRADYAN TANIMLARI -->
   <svg width="0" height="0" class="hidden" aria-hidden="true">
     <defs>
       <linearGradient id="amberCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,18 +70,24 @@
     
     <!-- Üst Durum Çubuğu -->
     <header class="flex items-center justify-between gap-2 shrink-0">
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <!-- Aktif Oynatıcı Kapsülü -->
-        <div onclick="resumeLastMedia()" class="glass-app-card flex items-center gap-2.5 px-3.5 py-2 rounded-full cursor-pointer transition">
+        <div onclick="resumeLastMedia()" class="glass-app-card flex items-center gap-2 px-3 py-2 rounded-full cursor-pointer transition">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="3"/><polyline points="17 2 12 7 7 2"/></svg>
-          <span id="top-active-title" class="text-xs sm:text-sm font-bold text-white truncate max-w-[130px] sm:max-w-[200px]">TRT 1 HD</span>
-          <span class="w-7 h-7 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-black flex items-center justify-center text-xs font-black shadow">▶</span>
+          <span id="top-active-title" class="text-xs sm:text-sm font-bold text-white truncate max-w-[95px] sm:max-w-[160px]">TRT 1 HD</span>
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-black flex items-center justify-center text-[10px] sm:text-xs font-black shadow">▶</span>
         </div>
 
         <!-- Favoriler Butonu -->
-        <button onclick="openFavoritesModal()" class="glass-app-card flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold text-amber-100 transition">
+        <button onclick="openFavoritesModal()" class="glass-app-card flex items-center gap-1.5 px-3 py-2 rounded-full text-xs sm:text-sm font-semibold text-amber-100 transition">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="url(#amberCyanGrad)"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          <span>Favoriler</span>
+          <span class="hidden sm:inline">Favoriler</span>
+        </button>
+
+        <!-- Gerçek Mikrofonlu Sesli Asistan Butonu -->
+        <button onclick="startVoiceAssistant()" class="glass-app-card flex items-center gap-1.5 px-3 py-2 rounded-full border-cyan-400/60 text-xs sm:text-sm font-bold text-cyan-200 transition">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          <span>Asistan</span>
         </button>
       </div>
 
@@ -88,9 +98,8 @@
       </div>
     </header>
 
-    <!-- Orta Büyük Kaydırılabilir Kart Alanı (TV / Radyo / YouTube) -->
+    <!-- Orta Büyük Kaydırılabilir Kart Alanı -->
     <section class="flex-1 flex flex-col justify-center my-2 sm:my-3 min-h-0">
-      <!-- Kart Geçiş Noktaları & Sekme Seçici -->
       <div class="flex items-center justify-center gap-2 mb-2">
         <button onclick="setHeroCard(0)" id="dot-0" class="px-3.5 py-1.5 rounded-full bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 transition">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="2" y="7" width="20" height="15" rx="3"/><polyline points="17 2 12 7 7 2"/></svg>
@@ -106,10 +115,7 @@
         </button>
       </div>
 
-      <!-- Büyük Hero Kart (Parmağınla Sağa/Sola Kaydırılabilir) -->
       <div id="hero-swipe-area" class="relative w-full max-w-3xl mx-auto flex-1 max-h-[340px] rounded-[28px] bg-gradient-to-br from-[#281e16]/95 via-[#171618]/95 to-[#0f1316]/95 border-2 border-amber-400/70 gold-glow p-4 sm:p-6 flex flex-col justify-between overflow-hidden transition-all">
-        
-        <!-- Üst Satır -->
         <div class="flex items-start justify-between gap-2 z-10">
           <div>
             <div id="hero-badge" class="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-300 uppercase tracking-wider">
@@ -123,20 +129,16 @@
           </button>
         </div>
 
-        <!-- Alt Geçmiş Kutuları (Son Açılan Kanallar / Radyolar / Videolar) -->
         <div class="z-10 mt-3">
           <div id="hero-history-label" class="text-[10px] font-mono text-zinc-400 mb-2 uppercase tracking-wider">SON İZLENEN KANALLAR</div>
-          <div id="hero-history-grid" class="grid grid-cols-4 gap-2 sm:gap-3">
-            <!-- JS ile dinamik dolacak -->
-          </div>
+          <div id="hero-history-grid" class="grid grid-cols-4 gap-2 sm:gap-3"></div>
         </div>
       </div>
     </section>
 
-    <!-- Alt Sabit Uygulama Şeridi (Füme Buzlu Cam & Kehribar/Turkuaz Özel SVG İkonlar) -->
+    <!-- Alt Sabit Uygulama Şeridi -->
     <footer class="shrink-0 max-w-3xl mx-auto w-full">
       <div id="bottom-dock" class="grid grid-cols-5 gap-2 sm:gap-3">
-        <!-- Canlı TV -->
         <button onclick="openScreen('screen-tv-groups')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -149,7 +151,6 @@
           <span class="text-[10px] sm:text-xs font-semibold text-zinc-100 truncate w-full text-center">Canlı TV</span>
         </button>
 
-        <!-- Radyo -->
         <button onclick="openScreen('screen-radio')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -163,7 +164,6 @@
           <span class="text-[10px] sm:text-xs font-semibold text-zinc-100 truncate w-full text-center">Radyo</span>
         </button>
 
-        <!-- Medya -->
         <button onclick="openScreen('screen-media')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -175,7 +175,6 @@
           <span class="text-[10px] sm:text-xs font-semibold text-zinc-100 truncate w-full text-center">Medya</span>
         </button>
 
-        <!-- Tarayıcı -->
         <button onclick="openScreen('screen-browser')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -188,7 +187,6 @@
           <span class="text-[10px] sm:text-xs font-semibold text-zinc-100 truncate w-full text-center">Tarayıcı</span>
         </button>
 
-        <!-- Ayarlar -->
         <button onclick="openScreen('screen-settings')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -209,12 +207,9 @@
         <h2 class="text-lg font-display font-bold text-amber-400">TV Kanallarım & M3U Listeleri</h2>
         <span class="text-[11px] text-zinc-400">Silmek için sağdaki butona dokunun</span>
       </div>
-      <div id="tv-groups-container" class="space-y-2.5 pb-4">
-        <!-- JS ile gruplar doldurulacak -->
-      </div>
+      <div id="tv-groups-container" class="space-y-2.5 pb-4"></div>
     </div>
 
-    <!-- Alt Kontrol Çubuğu -->
     <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
       <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 border border-zinc-700 text-sm font-bold text-white flex items-center gap-2">
         <span>←</span><span>TV</span>
@@ -224,12 +219,11 @@
         <button onclick="filterTvPrompt()" title="Filtrele" class="glass-app-card w-10 h-10 rounded-full text-cyan-300 flex items-center justify-center text-sm">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         </button>
-        <!-- Artılı TV Logosu -> Link Ekleme Penceresi -->
         <button onclick="openAddLinkModal()" title="Kanal / M3U Linki Ekle" class="px-3.5 h-10 rounded-full bg-gradient-to-r from-amber-300 to-amber-500 text-black font-black flex items-center gap-1.5 text-xs shadow-lg shadow-amber-500/20">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="2" y="7" width="20" height="14" rx="3"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
           <span>Link Ekle</span>
         </button>
-        <button onclick="voiceSearchChannel()" title="Sesli Ara" class="glass-app-card w-10 h-10 rounded-full text-amber-300 flex items-center justify-center text-sm">
+        <button onclick="startVoiceAssistant()" title="Sesli Kanal Aç" class="glass-app-card w-10 h-10 rounded-full text-cyan-300 flex items-center justify-center text-sm">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
         </button>
         <button onclick="openScreen('screen-home')" title="Ana Ekran" class="glass-app-card w-10 h-10 rounded-full text-white flex items-center justify-center">
@@ -239,28 +233,25 @@
     </div>
   </div>
 
-  <!-- ==================== 3. TAM EKRAN TV OYNATICI (DOKUNUNCA AÇILAN KANAL LİSTESİ) ==================== -->
+  <!-- ==================== 3. TAM EKRAN TV OYNATICI ==================== -->
   <div id="screen-tv-player" class="screen-view hidden fixed inset-0 z-50 bg-black flex flex-col">
     <div onclick="togglePlayerOverlay()" class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
       <video id="video-element" playsinline class="w-full h-full object-contain"></video>
 
-      <!-- Üst Bilgi (Overlay Açıkken) -->
       <div id="player-top-bar" class="absolute top-0 inset-x-0 p-3 bg-gradient-to-b from-black/90 to-transparent flex items-center justify-between transition-opacity duration-300">
         <div class="flex items-center gap-2">
           <span class="px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold">● CANLI</span>
           <span id="player-channel-name" class="text-sm sm:text-base font-bold text-white">TRT 1</span>
         </div>
         <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-          <button onclick="switchStreamEngine()" class="glass-app-card px-3 py-1.5 rounded-xl text-amber-300 text-xs font-bold">⚡ Motor Değiştir</button>
+          <button onclick="startVoiceAssistant()" class="glass-app-card px-3 py-1.5 rounded-xl text-cyan-300 text-xs font-bold">🎙️ Ses</button>
+          <button onclick="switchStreamEngine()" class="glass-app-card px-3 py-1.5 rounded-xl text-amber-300 text-xs font-bold">⚡ Motor</button>
           <button onclick="openScreen('screen-tv-groups')" class="glass-app-card px-3 py-1.5 rounded-xl text-white text-xs font-bold">✕ Kapat</button>
         </div>
       </div>
 
-      <!-- Sol Yarı Şeffaf Kanal Listesi Çekmecesi -->
-      <div id="player-side-drawer" onclick="event.stopPropagation()" class="absolute left-0 top-14 bottom-24 w-72 sm:w-80 bg-black/85 backdrop-blur-md border-r border-amber-500/30 p-2.5 overflow-y-auto space-y-2 transition-transform duration-300">
-      </div>
+      <div id="player-side-drawer" onclick="event.stopPropagation()" class="absolute left-0 top-14 bottom-24 w-72 sm:w-80 bg-black/85 backdrop-blur-md border-r border-amber-500/30 p-2.5 overflow-y-auto space-y-2 transition-transform duration-300"></div>
 
-      <!-- Alt Oynatıcı Kontrolleri -->
       <div id="player-bottom-bar" onclick="event.stopPropagation()" class="absolute bottom-0 inset-x-0 bg-black/90 backdrop-blur-md border-t border-zinc-800 transition-opacity duration-300">
         <div class="px-4 py-2.5 flex items-center justify-between">
           <div class="flex items-center gap-1.5 text-red-500 font-bold text-xs">
@@ -301,7 +292,7 @@
         <div class="text-[10px] font-mono text-cyan-300 tracking-widest">CANLI FM / WEB RADYO</div>
         <div id="radio-now-name" class="text-2xl sm:text-3xl font-display font-black text-white">TRT FM</div>
         <div id="radio-now-desc" class="text-xs text-amber-200/80">Türkçe Pop · Canlı Yayın</div>
-        <div class="flex items-center justify-center gap-4 pt-2">
+        <div class="flex items-center justify-center gap-3 pt-2">
           <button onclick="prevRadioStation()" class="px-4 py-2 rounded-full bg-zinc-900/90 border border-zinc-700 text-white text-sm">⏮ Önceki</button>
           <button onclick="toggleRadioAudio()" id="radio-main-btn" class="px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-300 to-amber-500 text-black font-black text-sm">▶ Çal</button>
           <button onclick="nextRadioStation()" class="px-4 py-2 rounded-full bg-zinc-900/90 border border-zinc-700 text-white text-sm">Sonraki ⏭</button>
@@ -314,9 +305,12 @@
 
     <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
       <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 text-sm font-bold text-white">← Radyo</button>
-      <button onclick="openScreen('screen-home')" class="glass-app-card w-10 h-10 rounded-full flex items-center justify-center">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="startVoiceAssistant()" class="glass-app-card px-3.5 h-10 rounded-full text-cyan-300 text-xs font-bold flex items-center gap-1.5">🎙️ Sesle Radyo Seç</button>
+        <button onclick="openScreen('screen-home')" class="glass-app-card w-10 h-10 rounded-full flex items-center justify-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -389,14 +383,15 @@
         <span class="text-zinc-400 text-lg">›</span>
       </button>
 
-      <button onclick="alert('Hey Seyir Sesli Komut Aktif: \"TRT 1 aç\", \"Radyo aç\" diyebilirsiniz.')" class="glass-app-card w-full p-4 rounded-2xl flex items-center justify-between text-left transition">
+      <!-- Ses ve Asistan Ayar Kartı -->
+      <button onclick="openVoiceSettingsModal()" class="glass-app-card w-full p-4 rounded-2xl flex items-center justify-between text-left transition">
         <div class="flex items-center gap-3.5">
           <div class="glass-icon-badge w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
           </div>
           <div>
             <div class="font-bold text-sm sm:text-base text-white">Ses ve asistan</div>
-            <div class="text-xs text-zinc-400">Sesli komutlar, yapay zeka asistanı, karşılama mesajı</div>
+            <div class="text-xs text-cyan-300">Türkçe sesli komut, sesli yanıt ve karşılama ayarları</div>
           </div>
         </div>
         <span class="text-zinc-400 text-lg">›</span>
@@ -479,12 +474,60 @@
 
     </div>
 
-    <!-- En Alt Sabit Ayarlar Barı -->
     <div class="h-14 shrink-0 px-4 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
       <span class="text-sm font-bold text-white">Ayarlar</span>
       <button onclick="openScreen('screen-home')" class="glass-app-card w-10 h-10 rounded-full flex items-center justify-center">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
       </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SESLİ ASİSTAN DİNLEME EKRANI ==================== -->
+  <div id="modal-voice-assistant" class="hidden fixed inset-0 z-[70] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-app-card w-full max-w-md rounded-3xl p-6 text-center space-y-4">
+      <div class="flex justify-end">
+        <button onclick="stopVoiceAssistant()" class="text-zinc-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div onclick="startVoiceAssistant()" class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-cyan-400 text-black flex items-center justify-center cursor-pointer mic-pulse">
+        <svg class="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      </div>
+
+      <div>
+        <div id="voice-status-title" class="text-lg font-display font-black text-amber-300">Dinliyorum...</div>
+        <p id="voice-transcript-text" class="text-sm text-white mt-1 min-h-[24px]">Örn: "TRT 1 aç", "Kral FM çal", "YouTube aç"</p>
+      </div>
+
+      <!-- Hızlı Tek Dokunuş Sesli Komut Örnekleri -->
+      <div class="grid grid-cols-2 gap-2 pt-2 text-xs">
+        <button onclick="processVoiceCommand('trt 1 aç')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-amber-200 font-semibold">"TRT 1 aç"</button>
+        <button onclick="processVoiceCommand('trt haber aç')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-amber-200 font-semibold">"TRT Haber aç"</button>
+        <button onclick="processVoiceCommand('kral fm çal')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-cyan-200 font-semibold">"Kral FM çal"</button>
+        <button onclick="processVoiceCommand('radyo aç')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-cyan-200 font-semibold">"Radyo aç"</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SES VE ASİSTAN AYARLARI ==================== -->
+  <div id="modal-voice-settings" class="hidden fixed inset-0 z-[65] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-app-card w-full max-w-md rounded-3xl p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-display font-bold text-cyan-300">🎙️ Ses ve Asistan Ayarları</h3>
+        <button onclick="document.getElementById('modal-voice-settings').classList.add('hidden')" class="text-zinc-400 text-lg">✕</button>
+      </div>
+      <div class="space-y-3 text-xs text-zinc-200">
+        <label class="flex items-center justify-between p-3 rounded-xl bg-black/60 border border-zinc-800">
+          <span>Sesli Karşılama ("Seyir Auto hazır")</span>
+          <input id="chk-voice-welcome" type="checkbox" onchange="saveVoicePrefs()" class="w-4 h-4 accent-amber-400" />
+        </label>
+        <label class="flex items-center justify-between p-3 rounded-xl bg-black/60 border border-zinc-800">
+          <span>Komut Sonrası Sesli Geri Bildirim</span>
+          <input id="chk-voice-reply" type="checkbox" onchange="saveVoicePrefs()" class="w-4 h-4 accent-amber-400" />
+        </label>
+        <button onclick="document.getElementById('modal-voice-settings').classList.add('hidden'); startVoiceAssistant();" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-300 to-cyan-400 text-black font-display font-black text-sm">
+          MİKROFONU ŞİMDİ TEST ET
+        </button>
+      </div>
     </div>
   </div>
 
@@ -569,6 +612,7 @@
       { name: 'Canlı Haberler', url: 'https://www.youtube.com/results?search_query=canlı+haber' }
     ]));
     let favorites = JSON.parse(localStorage.getItem('seyir_v2_favs') || '[]');
+    let voicePrefs = JSON.parse(localStorage.getItem('seyir_v2_voice') || '{"welcome":true,"reply":true}');
 
     let activeHeroIdx = 0;
     let activeChannelList = [...defaultChannels];
@@ -578,10 +622,135 @@
     let tsPlayer = null;
     let engineMode = 'AUTO';
 
-    // Özel SVG İkon Yardımcıları
     const svgTvMini = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="3"/><polyline points="17 2 12 7 7 2"/></svg>`;
     const svgRadMini = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="8" width="20" height="13" rx="3"/><line x1="6" y1="8" x2="18" y2="3"/><circle cx="16" cy="14.5" r="2.2" stroke="#22D3EE"/></svg>`;
     const svgYtMini = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 16 12 10 15 10 9" fill="#FBBF24"/></svg>`;
+
+    // --- GERÇEK MİKROFONLU SESLİ ASİSTAN (TÜRKÇE) ---
+    let recognition = null;
+
+    function speakTurkish(text) {
+      if (!voicePrefs.reply || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'tr-TR';
+      utter.rate = 1.05;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function startVoiceAssistant() {
+      const modal = document.getElementById('modal-voice-assistant');
+      const titleEl = document.getElementById('voice-status-title');
+      const textEl = document.getElementById('voice-transcript-text');
+      modal.classList.remove('hidden');
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        titleEl.textContent = 'Tarayıcı Mikrofon Desteği Yok';
+        textEl.textContent = 'Aşağıdaki hızlı sesli komut butonlarına dokunabilirsiniz:';
+        return;
+      }
+
+      if (recognition) { try { recognition.abort(); } catch(e){} }
+      recognition = new SpeechRec();
+      recognition.lang = 'tr-TR';
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      titleEl.textContent = 'Dinliyorum... Konuşabilirsiniz';
+      textEl.textContent = 'Örn: "TRT 1 aç", "Kral FM çal", "YouTube aç"';
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
+        textEl.textContent = `"${transcript}"`;
+        if (event.results[0].isFinal) {
+          processVoiceCommand(transcript);
+        }
+      };
+
+      recognition.onerror = (err) => {
+        titleEl.textContent = 'Ses Algılanamadı';
+        textEl.textContent = err.error === 'not-allowed'
+          ? 'Lütfen uygulama ayarlarından Mikrofon iznini açın.'
+          : 'Tekrar denemek için mikrofona dokunun veya alttan seçin.';
+      };
+
+      try { recognition.start(); } catch(e) {}
+    }
+
+    function stopVoiceAssistant() {
+      if (recognition) { try { recognition.stop(); } catch(e){} }
+      document.getElementById('modal-voice-assistant').classList.add('hidden');
+    }
+
+    function processVoiceCommand(rawCmd) {
+      const cmd = rawCmd.toLocaleLowerCase('tr-TR').trim();
+      stopVoiceAssistant();
+
+      // 1. Durdur / Sesi Kapat
+      if (cmd.includes('durdur') || cmd.includes('kapat') || cmd.includes('sessiz')) {
+        const v = document.getElementById('video-element');
+        const a = document.getElementById('audio-element');
+        if (v && !v.paused) v.pause();
+        if (a && !a.paused) a.pause();
+        speakTurkish('Yayın durduruldu');
+        return;
+      }
+
+      // 2. Özel Eklenen + Varsayılan Tüm TV Kanallarında Ara
+      const allTv = [...defaultChannels, ...customLists.flatMap(g => g.channels)];
+      const matchedTv = allTv.find(ch => cmd.includes(ch.name.toLocaleLowerCase('tr-TR')));
+      if (matchedTv) {
+        speakTurkish(matchedTv.name + ' açılıyor');
+        playChannelFromHome(matchedTv);
+        return;
+      }
+
+      // 3. Radyo İstasyonlarında Ara
+      const matchedRadio = radioList.find(r => cmd.includes(r.name.toLocaleLowerCase('tr-TR')));
+      if (matchedRadio) {
+        speakTurkish(matchedRadio.name + ' çalınıyor');
+        playRadioFromHome(matchedRadio);
+        return;
+      }
+
+      // 4. Genel Uygulama / Ekran Komutları
+      if (cmd.includes('radyo')) {
+        speakTurkish('Radyo açılıyor');
+        openScreen('screen-radio');
+        playRadioIndex(currentRadioIdx);
+      } else if (cmd.includes('tv') || cmd.includes('televizyon') || cmd.includes('kanal')) {
+        speakTurkish('Canlı TV kanalları açılıyor');
+        openScreen('screen-tv-groups');
+      } else if (cmd.includes('youtube') || cmd.includes('video')) {
+        speakTurkish('YouTube açılıyor');
+        openQuickWeb('YouTube', 'https://www.youtube.com');
+      } else if (cmd.includes('harita') || cmd.includes('navigasyon')) {
+        speakTurkish('Haritalar açılıyor');
+        openQuickWeb('Haritalar', 'https://maps.google.com');
+      } else if (cmd.includes('ayar')) {
+        speakTurkish('Ayarlar açılıyor');
+        openScreen('screen-settings');
+      } else if (cmd.includes('ana ekran') || cmd.includes('ev')) {
+        speakTurkish('Ana ekrana dönülüyor');
+        openScreen('screen-home');
+      } else {
+        speakTurkish('Anlaşılamadı, lütfen kanal veya radyo adını tekrar söyleyin');
+        alert('Algılanan komut: "' + rawCmd + '"\nÖrnek: "TRT 1 aç", "Kral FM çal", "YouTube aç"');
+      }
+    }
+
+    function openVoiceSettingsModal() {
+      document.getElementById('chk-voice-welcome').checked = voicePrefs.welcome;
+      document.getElementById('chk-voice-reply').checked = voicePrefs.reply;
+      document.getElementById('modal-voice-settings').classList.remove('hidden');
+    }
+
+    function saveVoicePrefs() {
+      voicePrefs.welcome = document.getElementById('chk-voice-welcome').checked;
+      voicePrefs.reply = document.getElementById('chk-voice-reply').checked;
+      localStorage.setItem('seyir_v2_voice', JSON.stringify(voicePrefs));
+    }
 
     // --- EKRAN GEÇİŞLERİ ---
     function openScreen(id) {
@@ -592,7 +761,7 @@
       if (id === 'screen-radio') renderRadioStations();
     }
 
-    // --- ANA EKRAN KAYDIRILABİLİR KART (TV / RADYO / YOUTUBE) ---
+    // --- ANA EKRAN KAYDIRILABİLİR KART ---
     function setHeroCard(idx) {
       activeHeroIdx = (idx + 3) % 3;
       [0, 1, 2].forEach(i => {
@@ -653,7 +822,6 @@
       else openQuickWeb('YouTube', 'https://www.youtube.com');
     }
 
-    // Parmakla Sağa / Sola Kaydırma (Touch Swipe)
     let touchStartX = 0;
     const swipeArea = document.getElementById('hero-swipe-area');
     swipeArea.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
@@ -755,7 +923,7 @@
       reader.readAsText(file);
     }
 
-    // --- ÇOKLU MOTORLU TV OYNATICI (HLS + MPEGTS + NATIVE) ---
+    // --- ÇOKLU MOTORLU TV OYNATICI ---
     function openChannelGroup(groupName, channels) {
       activeChannelList = channels;
       document.getElementById('player-group-label').textContent = groupName;
@@ -810,7 +978,7 @@
 
     function switchStreamEngine() {
       engineMode = engineMode === 'AUTO' ? 'TS' : (engineMode === 'TS' ? 'NATIVE' : 'AUTO');
-      alert('Oynatıcı Motoru: ' + engineMode + ' moduna geçirildi, yayın yeniden başlatılıyor.');
+      alert('Oynatıcı Motoru: ' + engineMode + ' moduna geçirildi.');
       playTvChannel(currentChannelIdx);
     }
 
@@ -977,10 +1145,6 @@
       else alert('Eşleşen kanal bulunamadı.');
     }
 
-    function voiceSearchChannel() {
-      alert('Sesli Arama: "TRT 1", "TRT Haber", "TRT Spor" veya "Radyo" diyebilirsiniz.');
-    }
-
     function toggleNightMode() { document.body.classList.toggle('night-filter'); }
     function clearHomeHistory() {
       if (confirm('Ana ekrandaki son izlenenler geçmişi temizlensin mi?')) {
@@ -996,8 +1160,11 @@
       }
     }
 
-    // İlk açılış
+    // İlk açılış & İsteğe bağlı sesli karşılama
     renderHeroCard();
+    if (voicePrefs.welcome) {
+      setTimeout(() => speakTurkish('Seyir Auto hazır'), 1200);
+    }
   </script>
 </body>
 </html>
