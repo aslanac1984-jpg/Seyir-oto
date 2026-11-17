@@ -175,7 +175,7 @@
           <span class="text-[10px] sm:text-xs font-semibold text-zinc-100 truncate w-full text-center">Medya</span>
         </button>
 
-        <button onclick="openScreen('screen-browser')" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
+        <button onclick="openFullGoogleBrowser()" class="glass-app-card p-2 sm:p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 transition">
           <div class="glass-icon-badge w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center">
             <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="9"/>
@@ -314,7 +314,7 @@
     </div>
   </div>
 
-  <!-- ==================== 5. MEDYA & WEB TARAYICI EKRANI ==================== -->
+  <!-- ==================== 5. MEDYA & TAM EKRAN GOOGLE WEB TARAYICI ==================== -->
   <div id="screen-media" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
     <div class="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full space-y-4">
       <h2 class="text-lg font-display font-bold text-amber-400">Yerel Medya & Müzik Çalar</h2>
@@ -332,41 +332,26 @@
     </div>
   </div>
 
-  <div id="screen-browser" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
-    <div class="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full space-y-4">
-      <h2 class="text-lg font-display font-bold text-amber-400">Araç İçi Web Tarayıcı</h2>
-      <div class="flex gap-2">
-        <input id="web-url-input" type="text" placeholder="Web adresi veya Google araması yazın..." class="flex-1 px-4 py-3 rounded-2xl bg-zinc-900 border border-amber-500/40 text-sm text-white focus:outline-none" />
-        <button onclick="launchWebSearch()" class="px-5 py-3 rounded-2xl bg-amber-400 text-black font-black text-xs">GİT</button>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <button onclick="openQuickWeb('YouTube', 'https://www.youtube.com')" class="glass-app-card p-4 rounded-2xl text-amber-200 font-bold text-xs flex flex-col items-center gap-2">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 16 12 10 15 10 9" fill="#FBBF24"/></svg>
-          <span>YouTube</span>
-        </button>
-        <button onclick="openQuickWeb('Google', 'https://www.google.com')" class="glass-app-card p-4 rounded-2xl text-cyan-200 font-bold text-xs flex flex-col items-center gap-2">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span>Google</span>
-        </button>
-        <button onclick="openQuickWeb('TRT Tabii', 'https://www.tabii.com')" class="glass-app-card p-4 rounded-2xl text-amber-200 font-bold text-xs flex flex-col items-center gap-2">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="3"/><polyline points="17 2 12 7 7 2"/></svg>
-          <span>TRT Tabii</span>
-        </button>
-        <button onclick="openQuickWeb('Haritalar', 'https://maps.google.com')" class="glass-app-card p-4 rounded-2xl text-cyan-200 font-bold text-xs flex flex-col items-center gap-2">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#cyanAmberGrad)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span>Haritalar</span>
-        </button>
-      </div>
-    </div>
-    <div class="h-14 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
-      <button onclick="openScreen('screen-home')" class="px-4 py-2 rounded-full bg-zinc-900 text-sm font-bold text-white">← Tarayıcı</button>
-      <button onclick="openScreen('screen-home')" class="glass-app-card w-10 h-10 rounded-full flex items-center justify-center">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+  <!-- Tam Ekran Doğrudan Google Web Tarayıcı Ekranı -->
+  <div id="screen-browser" class="screen-view hidden fixed inset-0 z-50 bg-white flex flex-col overflow-hidden">
+    <!-- Tam Ekran Google Sayfası (Gömülü) -->
+    <iframe id="google-browser-frame" src="https://www.google.com/webhp?igu=1" class="flex-1 w-full h-full border-0 bg-white" allow="geolocation; microphone; camera; autoplay; fullscreen"></iframe>
+
+    <!-- En Altta İnce Navigasyon Şeridi (Uygulamadan Çıkmadan Geri Dönmek İçin) -->
+    <div class="h-11 shrink-0 px-3 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between">
+      <button onclick="openScreen('screen-home')" class="px-3.5 py-1 rounded-full bg-zinc-900 text-xs font-bold text-white flex items-center gap-1.5">
+        <span>←</span><span>Ana Ekran</span>
       </button>
+      <div class="flex items-center gap-2">
+        <button onclick="reloadGoogleFrame()" class="px-3 py-1 rounded-full bg-zinc-900 text-amber-300 text-xs font-bold">↻ Google Ana Sayfa</button>
+        <button onclick="openScreen('screen-home')" class="w-8 h-8 rounded-full bg-zinc-800 text-white flex items-center justify-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- ==================== 6. AYARLAR EKRANI (8 SIRALI KART) ==================== -->
+  <!-- ==================== 6. AYARLAR EKRANI ==================== -->
   <div id="screen-settings" class="screen-view hidden flex-1 flex flex-col bg-[#0A0908] overflow-hidden">
     <div class="flex-1 overflow-y-auto p-3 sm:p-5 max-w-2xl mx-auto w-full space-y-2.5">
       
@@ -383,7 +368,6 @@
         <span class="text-zinc-400 text-lg">›</span>
       </button>
 
-      <!-- Ses ve Asistan Ayar Kartı -->
       <button onclick="openVoiceSettingsModal()" class="glass-app-card w-full p-4 rounded-2xl flex items-center justify-between text-left transition">
         <div class="flex items-center gap-3.5">
           <div class="glass-icon-badge w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
@@ -498,7 +482,6 @@
         <p id="voice-transcript-text" class="text-sm text-white mt-1 min-h-[24px]">Örn: "TRT 1 aç", "Kral FM çal", "YouTube aç"</p>
       </div>
 
-      <!-- Hızlı Tek Dokunuş Sesli Komut Örnekleri -->
       <div class="grid grid-cols-2 gap-2 pt-2 text-xs">
         <button onclick="processVoiceCommand('trt 1 aç')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-amber-200 font-semibold">"TRT 1 aç"</button>
         <button onclick="processVoiceCommand('trt haber aç')" class="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-700 text-amber-200 font-semibold">"TRT Haber aç"</button>
@@ -626,7 +609,17 @@
     const svgRadMini = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="8" width="20" height="13" rx="3"/><line x1="6" y1="8" x2="18" y2="3"/><circle cx="16" cy="14.5" r="2.2" stroke="#22D3EE"/></svg>`;
     const svgYtMini = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="url(#amberCyanGrad)" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><polygon points="10 9 16 12 10 15 10 9" fill="#FBBF24"/></svg>`;
 
-    // --- GERÇEK MİKROFONLU SESLİ ASİSTAN (TÜRKÇE) ---
+    // --- TAM EKRAN GOOGLE TARAYICI ---
+    function openFullGoogleBrowser() {
+      openScreen('screen-browser');
+    }
+
+    function reloadGoogleFrame() {
+      const frame = document.getElementById('google-browser-frame');
+      frame.src = 'https://www.google.com/webhp?igu=1';
+    }
+
+    // --- GERÇEK MİKROFONLU SESLİ ASİSTAN ---
     let recognition = null;
 
     function speakTurkish(text) {
@@ -658,7 +651,7 @@
       recognition.maxAlternatives = 1;
 
       titleEl.textContent = 'Dinliyorum... Konuşabilirsiniz';
-      textEl.textContent = 'Örn: "TRT 1 aç", "Kral FM çal", "YouTube aç"';
+      textEl.textContent = 'Örn: "TRT 1 aç", "Kral FM çal", "Google aç"';
 
       recognition.onresult = (event) => {
         const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
@@ -687,7 +680,6 @@
       const cmd = rawCmd.toLocaleLowerCase('tr-TR').trim();
       stopVoiceAssistant();
 
-      // 1. Durdur / Sesi Kapat
       if (cmd.includes('durdur') || cmd.includes('kapat') || cmd.includes('sessiz')) {
         const v = document.getElementById('video-element');
         const a = document.getElementById('audio-element');
@@ -697,7 +689,6 @@
         return;
       }
 
-      // 2. Özel Eklenen + Varsayılan Tüm TV Kanallarında Ara
       const allTv = [...defaultChannels, ...customLists.flatMap(g => g.channels)];
       const matchedTv = allTv.find(ch => cmd.includes(ch.name.toLocaleLowerCase('tr-TR')));
       if (matchedTv) {
@@ -706,7 +697,6 @@
         return;
       }
 
-      // 3. Radyo İstasyonlarında Ara
       const matchedRadio = radioList.find(r => cmd.includes(r.name.toLocaleLowerCase('tr-TR')));
       if (matchedRadio) {
         speakTurkish(matchedRadio.name + ' çalınıyor');
@@ -714,7 +704,6 @@
         return;
       }
 
-      // 4. Genel Uygulama / Ekran Komutları
       if (cmd.includes('radyo')) {
         speakTurkish('Radyo açılıyor');
         openScreen('screen-radio');
@@ -722,12 +711,12 @@
       } else if (cmd.includes('tv') || cmd.includes('televizyon') || cmd.includes('kanal')) {
         speakTurkish('Canlı TV kanalları açılıyor');
         openScreen('screen-tv-groups');
+      } else if (cmd.includes('google') || cmd.includes('tarayıcı') || cmd.includes('internet')) {
+        speakTurkish('Google tarayıcı açılıyor');
+        openFullGoogleBrowser();
       } else if (cmd.includes('youtube') || cmd.includes('video')) {
         speakTurkish('YouTube açılıyor');
         openQuickWeb('YouTube', 'https://www.youtube.com');
-      } else if (cmd.includes('harita') || cmd.includes('navigasyon')) {
-        speakTurkish('Haritalar açılıyor');
-        openQuickWeb('Haritalar', 'https://maps.google.com');
       } else if (cmd.includes('ayar')) {
         speakTurkish('Ayarlar açılıyor');
         openScreen('screen-settings');
@@ -736,7 +725,7 @@
         openScreen('screen-home');
       } else {
         speakTurkish('Anlaşılamadı, lütfen kanal veya radyo adını tekrar söyleyin');
-        alert('Algılanan komut: "' + rawCmd + '"\nÖrnek: "TRT 1 aç", "Kral FM çal", "YouTube aç"');
+        alert('Algılanan komut: "' + rawCmd + '"\nÖrnek: "TRT 1 aç", "Kral FM çal", "Google aç"');
       }
     }
 
@@ -1115,13 +1104,6 @@
       window.open(url, '_blank');
     }
 
-    function launchWebSearch() {
-      const q = document.getElementById('web-url-input').value.trim();
-      if (!q) return;
-      const url = q.startsWith('http') ? q : 'https://www.google.com/search?q=' + encodeURIComponent(q);
-      openQuickWeb(q, url);
-    }
-
     function playLocalMedia(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1160,7 +1142,7 @@
       }
     }
 
-    // İlk açılış & İsteğe bağlı sesli karşılama
+    // İlk açılış
     renderHeroCard();
     if (voicePrefs.welcome) {
       setTimeout(() => speakTurkish('Seyir Auto hazır'), 1200);
