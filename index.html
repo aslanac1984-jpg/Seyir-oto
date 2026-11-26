@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SEYİR AUTO — Akıllı Araç Kokpiti</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: radial-gradient(circle at top center, #0e1e3d 0%, #060d1b 100%);
@@ -103,6 +103,7 @@
       box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       position: relative;
       overflow: hidden;
+      cursor: pointer;
     }
     .card-3d:active, .card-3d.focused {
       transform: scale(0.97);
@@ -167,7 +168,7 @@
       font-weight: 800;
     }
 
-    /* YEDEK M3U EKRANI */
+    /* DAHİLİ M3U EKRANI */
     #screen-media {
       flex: 1;
       display: flex;
@@ -318,7 +319,7 @@
   <main id="screen-home">
     <div class="grid-cards" id="card-grid">
       <!-- 1. CANLI TV -->
-      <div class="card-3d" tabindex="0" onclick="openMediaModule('tv')">
+      <div class="card-3d" onclick="openMediaModule('tv')">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -336,7 +337,7 @@
       </div>
 
       <!-- 2. CANLI RADYO -->
-      <div class="card-3d" tabindex="0" onclick="openMediaModule('radio')">
+      <div class="card-3d" onclick="openMediaModule('radio')">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -355,7 +356,7 @@
       </div>
 
       <!-- 3. YOUTUBE -->
-      <div class="card-3d" tabindex="0" onclick="openDirectWeb('https://m.youtube.com')">
+      <div class="card-3d" onclick="openDirectWeb('https://m.youtube.com')">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -372,7 +373,7 @@
       </div>
 
       <!-- 4. HARİTALAR -->
-      <div class="card-3d" tabindex="0" onclick="openDirectWeb('https://www.google.com/maps')">
+      <div class="card-3d" onclick="openDirectWeb('https://www.google.com/maps')">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -389,7 +390,7 @@
       </div>
 
       <!-- 5. TARAYICI -->
-      <div class="card-3d" tabindex="0" onclick="openDirectWeb('https://www.google.com')">
+      <div class="card-3d" onclick="openDirectWeb('https://www.google.com')">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -407,7 +408,7 @@
       </div>
 
       <!-- 6. SESLİ ASİSTAN -->
-      <div class="card-3d" tabindex="0" onclick="triggerVoice()">
+      <div class="card-3d" onclick="triggerVoice()">
         <div class="card-top">
           <div class="svg-3d-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -477,7 +478,6 @@
   </div>
 
   <script>
-    /* CANLI SAAT */
     function updateClock() {
       const now = new Date();
       const t = document.getElementById('clock-time');
@@ -496,28 +496,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    /* DİREKSİYON TUŞLARI (SWC) DESTEĞİ */
-    let focusIndex = 0;
-    document.addEventListener('keydown', (e) => {
-      const cards = document.querySelectorAll('#card-grid .card-3d');
-      if (!cards.length || currentScreen !== 'home') return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'MediaTrackNext') {
-        e.preventDefault();
-        focusIndex = (focusIndex + 1) % cards.length;
-        cards.forEach((c, i) => c.classList.toggle('focused', i === focusIndex));
-        cards[focusIndex].focus();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'MediaTrackPrevious') {
-        e.preventDefault();
-        focusIndex = (focusIndex - 1 + cards.length) % cards.length;
-        cards.forEach((c, i) => c.classList.toggle('focused', i === focusIndex));
-        cards[focusIndex].focus();
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        cards[focusIndex].click();
-      }
-    });
-
-    /* EKRAN GEÇİŞLERİ */
     let currentScreen = 'home';
     function switchScreen(id) {
       currentScreen = id;
@@ -534,20 +512,12 @@
       else if (window.history.length > 1) window.history.back();
     }
 
-    /* FERMATA KÖPRÜSÜ */
+    /* SAF WEB GEÇİŞLERİ (FERMATA KÖPRÜ KİLİDİ KALDIRILDI) */
     function openDirectWeb(url) {
-      if (url && url.includes('youtube') && window.Fermata && typeof Fermata.openScreen === 'function') {
-        Fermata.openScreen(0x7f09030d);
-        return;
-      }
-      window.location.href = url;
+      window.location.assign(url);
     }
 
     function openMediaModule(type) {
-      if (window.Fermata && typeof Fermata.openScreen === 'function') {
-        Fermata.openScreen(type === 'radio' ? 0x7f09011c : 0x7f0902d5);
-        return;
-      }
       currentMediaType = type;
       document.getElementById('media-badge').textContent = type === 'radio' ? 'CANLI RADYO' : 'CANLI TV';
       switchScreen('media');
@@ -640,7 +610,6 @@
       });
     }
 
-    /* SESLİ KOMUT */
     function triggerVoice() {
       const modal = document.getElementById('voice-modal');
       const status = document.getElementById('voice-status');
