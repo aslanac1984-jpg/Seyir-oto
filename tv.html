@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SEYİR AUTO — Canlı TV</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #060d1b;
+      color: #f8fafc;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+    header {
+      height: 58px;
+      padding: 0 14px;
+      background: #081122;
+      border-bottom: 1px solid rgba(245, 197, 66, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .title { font-size: 16px; font-weight: 900; color: #f5c542; letter-spacing: 0.5px; }
+    .back-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(245, 197, 66, 0.45);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      overflow: hidden;
+    }
+    @media (min-width: 720px) {
+      .layout { flex-direction: row; }
+    }
+    .sidebar {
+      width: 100%;
+      max-height: 46%;
+      background: #0a1529;
+      border: 1px solid rgba(245, 197, 66, 0.28);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    @media (min-width: 720px) {
+      .sidebar { width: 320px; max-height: 100%; }
+    }
+    .input-box {
+      background: #060d1b;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 13px;
+      width: 100%;
+    }
+    .gold-btn {
+      background: linear-gradient(135deg, #fde047 0%, #d97706 100%);
+      color: #071122;
+      border: none;
+      border-radius: 9px;
+      padding: 9px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      background: #132342;
+      border: 1px solid rgba(245, 197, 66, 0.35);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab-btn.active { background: #f5c542; color: #071122; }
+    .channels {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ch-row {
+      padding: 10px 12px;
+      background: #11203d;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .ch-row:active { border-color: #f5c542; background: #1a315c; }
+    .stage {
+      flex: 1;
+      background: #000;
+      border-radius: 14px;
+      border: 1px solid rgba(245, 197, 66, 0.28);
+      overflow: hidden;
+      position: relative;
+    }
+    video { width: 100%; height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">📺 CANLI TV • M3U IPTV</div>
+    <button class="back-btn" onclick="window.location.href='index.html'">← Kokpite Dön</button>
+  </header>
+
+  <div class="layout">
+    <div class="sidebar">
+      <input id="pl-name" class="input-box" placeholder="Liste Adı (Örn: Spor, Ulusal)">
+      <input id="pl-url" class="input-box" placeholder="M3U / M3U8 Bağlantısı">
+      <button class="gold-btn" onclick="addPlaylist()">+ TV Listesi Ekle</button>
+      <div class="tabs" id="tabs"></div>
+      <div class="channels" id="channels"></div>
+    </div>
+    <div class="stage">
+      <video id="tv-video" controls playsinline></video>
+    </div>
+  </div>
+
+  <script>
+    let lists = [];
+    let activeId = '';
+    let hls = null;
+    try { lists = JSON.parse(localStorage.getItem('seyir_tv_m3u') || '[]'); } catch (e) {}
+
+    function save() {
+      try { localStorage.setItem('seyir_tv_m3u', JSON.stringify(lists)); } catch (e) {}
+    }
+
+    async function addPlaylist() {
+      const name = document.getElementById('pl-name').value.trim();
+      const url = document.getElementById('pl-url').value.trim();
+      if (!name || !url) return;
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const lines = text.split(/\r?\n/);
+        const items = [];
+        let title = '';
+        for (let i = 0; i < lines.length; i++) {
+          const l = lines[i].trim();
+          if (l.startsWith('#EXTINF:')) {
+            const idx = l.lastIndexOf(',');
+            title = idx !== -1 ? l.substring(idx + 1).trim() : 'Kanal';
+          } else if (l && !l.startsWith('#')) {
+            items.push({ name: title || ('Kanal ' + (items.length + 1)), url: l });
+            title = '';
+          }
+        }
+        const id = 'tv_' + Date.now();
+        lists.push({ id, name, items });
+        activeId = id;
+        save();
+        document.getElementById('pl-name').value = '';
+        document.getElementById('pl-url').value = '';
+        render();
+      } catch (e) {
+        alert('M3U listesi yüklenemedi. Bağlantıyı kontrol edin.');
+      }
+    }
+
+    function removeList(id) {
+      lists = lists.filter(x => x.id !== id);
+      save();
+      render();
+    }
+
+    function playStream(streamUrl) {
+      const video = document.getElementById('tv-video');
+      if (hls) { hls.destroy(); hls = null; }
+      if (streamUrl.includes('.m3u8') && window.Hls && Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      } else {
+        video.src = streamUrl;
+        video.play().catch(() => {});
+      }
+    }
+
+    function render() {
+      const tabsEl = document.getElementById('tabs');
+      const chEl = document.getElementById('channels');
+      tabsEl.innerHTML = '';
+      chEl.innerHTML = '';
+      if (!lists.length) {
+        chEl.innerHTML = '<div style="color:#94a3b8; font-size:12px;">Henüz TV M3U listesi eklenmedi.</div>';
+        return;
+      }
+      if (!lists.some(x => x.id === activeId)) activeId = lists[0].id;
+      lists.forEach(pl => {
+        const b = document.createElement('button');
+        b.className = 'tab-btn' + (pl.id === activeId ? ' active' : '');
+        b.innerHTML = pl.name + ' <span style="color:#e11d48; margin-left:6px;" onclick="event.stopPropagation(); removeList(\'' + pl.id + '\')">✕</span>';
+        b.onclick = () => { activeId = pl.id; render(); };
+        tabsEl.appendChild(b);
+      });
+      const current = lists.find(x => x.id === activeId);
+      if (!current) return;
+      current.items.forEach(ch => {
+        const row = document.createElement('div');
+        row.className = 'ch-row';
+        row.textContent = ch.name;
+        row.onclick = () => playStream(ch.url);
+        chEl.appendChild(row);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
