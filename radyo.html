@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SEYİR AUTO — Canlı Radyo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #060d1b;
+      color: #f8fafc;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+    header {
+      height: 58px;
+      padding: 0 14px;
+      background: #081122;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .title { font-size: 16px; font-weight: 900; color: #38bdf8; letter-spacing: 0.5px; }
+    .back-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .wrap {
+      flex: 1;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .now-playing {
+      background: linear-gradient(145deg, #0f2142, #091326);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .station-name { font-size: 15px; font-weight: 800; color: #38bdf8; }
+    .add-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .input-box {
+      flex: 1;
+      min-width: 130px;
+      background: #0a1529;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 9px 10px;
+      color: #fff;
+      font-size: 13px;
+    }
+    .cyan-btn {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 9px 14px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      background: #132342;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab-btn.active { background: #38bdf8; color: #060d1b; }
+    .stations {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+    .st-card {
+      padding: 12px;
+      background: #0f1d38;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .st-card:active { border-color: #38bdf8; background: #172d54; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">📻 CANLI RADYO • FM &amp; M3U</div>
+    <button class="back-btn" onclick="window.location.href='index.html'">← Kokpite Dön</button>
+  </header>
+
+  <div class="wrap">
+    <div class="now-playing">
+      <div>
+        <div style="font-size:10px; color:#94a3b8;">ÇALAN RADYO</div>
+        <div class="station-name" id="current-station">Bir istasyon seçin</div>
+      </div>
+      <audio id="radio-audio" controls></audio>
+    </div>
+
+    <div class="add-bar">
+      <input id="r-name" class="input-box" placeholder="Radyo Liste Adı">
+      <input id="r-url" class="input-box" placeholder="M3U / Radyo Akış Linki">
+      <button class="cyan-btn" onclick="addRadioList()">+ Ekle</button>
+    </div>
+
+    <div class="tabs" id="r-tabs"></div>
+    <div class="stations" id="r-list"></div>
+  </div>
+
+  <script>
+    let lists = [];
+    let activeId = '';
+    try { lists = JSON.parse(localStorage.getItem('seyir_radio_m3u') || '[]'); } catch (e) {}
+
+    function save() {
+      try { localStorage.setItem('seyir_radio_m3u', JSON.stringify(lists)); } catch (e) {}
+    }
+
+    async function addRadioList() {
+      const name = document.getElementById('r-name').value.trim();
+      const url = document.getElementById('r-url').value.trim();
+      if (!name || !url) return;
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const lines = text.split(/\r?\n/);
+        const items = [];
+        let title = '';
+        for (let i = 0; i < lines.length; i++) {
+          const l = lines[i].trim();
+          if (l.startsWith('#EXTINF:')) {
+            const idx = l.lastIndexOf(',');
+            title = idx !== -1 ? l.substring(idx + 1).trim() : 'Radyo';
+          } else if (l && !l.startsWith('#')) {
+            items.push({ name: title || ('Radyo ' + (items.length + 1)), url: l });
+            title = '';
+          }
+        }
+        if (!items.length) items.push({ name, url });
+        const id = 'rad_' + Date.now();
+        lists.push({ id, name, items });
+        activeId = id;
+        save();
+        document.getElementById('r-name').value = '';
+        document.getElementById('r-url').value = '';
+        render();
+      } catch (e) {
+        const id = 'rad_' + Date.now();
+        lists.push({ id, name, items: [{ name, url }] });
+        activeId = id;
+        save();
+        render();
+      }
+    }
+
+    function removeList(id) {
+      lists = lists.filter(x => x.id !== id);
+      save();
+      render();
+    }
+
+    function render() {
+      const tabsEl = document.getElementById('r-tabs');
+      const listEl = document.getElementById('r-list');
+      tabsEl.innerHTML = '';
+      listEl.innerHTML = '';
+      if (!lists.length) {
+        listEl.innerHTML = '<div style="color:#94a3b8; font-size:12px;">Henüz radyo listesi eklenmedi.</div>';
+        return;
+      }
+      if (!lists.some(x => x.id === activeId)) activeId = lists[0].id;
+      lists.forEach(pl => {
+        const b = document.createElement('button');
+        b.className = 'tab-btn' + (pl.id === activeId ? ' active' : '');
+        b.innerHTML = pl.name + ' <span style="color:#fb7185; margin-left:6px;" onclick="event.stopPropagation(); removeList(\'' + pl.id + '\')">✕</span>';
+        b.onclick = () => { activeId = pl.id; render(); };
+        tabsEl.appendChild(b);
+      });
+      const current = lists.find(x => x.id === activeId);
+      if (!current) return;
+      current.items.forEach(st => {
+        const card = document.createElement('div');
+        card.className = 'st-card';
+        card.textContent = '📻 ' + st.name;
+        card.onclick = () => {
+          document.getElementById('current-station').textContent = st.name;
+          const a = document.getElementById('radio-audio');
+          a.src = st.url;
+          a.play().catch(() => {});
+        };
+        listEl.appendChild(card);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
